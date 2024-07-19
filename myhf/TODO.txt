@@ -1,0 +1,26 @@
+Molecule Class
+	* Create a Molecule class that is a vector of Atoms and a reference to a Basis
+	* Atom should just be ATOM_TYPE and a position
+	* The subclasses of Basis should not hold any positional data
+
+
+Basis Sets
+	* Support the following basis sets:
+		- STO-3G, STO-6G, 6-31G, 6-31G* [aka 6-31G(d)], 6-31G** [aka 6-31G(d,p)]
+	* Support all atoms up to Calcium (20)
+
+Overlap Matrix
+	* Make sure we can compute the overlap matrix for a variety of atoms/positions
+	* Make sure results align with the Hartree Fock program, PySCF, and published values
+	* Look at the PySCF implmentation and look for potential improvements
+	* Does it actually help to cache computed values? Is there not a way to simply
+		omit any attempt to calculate those values in the first place?
+
+Profiling
+	* Go ahead and add profiling now so we have it from the outset
+
+Unit Tests
+	* Add unit tests for all computations
+	* Cite sources for expected values
+	* What are unit test best practices? Do we want to move the code into a
+		static library and have the unit tests reside in a separate project?
