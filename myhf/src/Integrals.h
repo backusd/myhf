@@ -80,8 +80,4 @@ protected:
     void CalculateMoment(Eigen::MatrixXd& matrix, Eigen::MatrixXd& matrix1, double alpha1, double alpha2, double center1, double center2, double center3, unsigned int maxQN1, unsigned int maxQN2);
 };
 
-
-
-
-Eigen::MatrixXd OverlapMatrix(std::span<Atom> atoms);
 }

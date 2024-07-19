@@ -1,32 +1,55 @@
 #pragma once
-
-
 #include "Shell.h"
 #include "Atom.h"
 
-
-
 namespace myhf
 {
-class Basis
+struct BasisAtom
 {
-public:
-	const std::string_view name;
-	std::vector<Atom> atoms;
+	std::vector<ContractedGaussianShell> shells;
 
-	constexpr Atom GetAtom(ATOM_TYPE type) const noexcept 
+	constexpr unsigned int NumberOfContractedGaussians() const noexcept
+	{
+		unsigned int res = 0;
+		for (auto const& shell : shells)
+			res += shell.CountNumberOfContractedGaussians();
+		return res;
+	}
+	constexpr QuantumNumbers GetMaxQN(double alpha) const noexcept
+	{
+		QuantumNumbers maxQN(0, 0, 0);
+
+		for (const auto& shell : shells)
+			for (const auto& orbital : shell.basisFunctions)
+				for (const auto& gaussian : orbital.gaussianOrbitals)
+					if (alpha == gaussian.alpha)
+					{
+						maxQN.l = std::max(maxQN.l, orbital.angularMomentum.l);
+						maxQN.m = std::max(maxQN.m, orbital.angularMomentum.m);
+						maxQN.n = std::max(maxQN.m, orbital.angularMomentum.n);
+					}
+
+		return maxQN;
+	}
+};
+
+struct Basis
+{
+	const std::string_view name;
+	std::vector<BasisAtom> atoms;
+
+	constexpr const BasisAtom& GetAtom(ATOM_TYPE type) const noexcept 
 	{ 
 		assert(static_cast<unsigned int>(type) > 0);
 		assert(static_cast<unsigned int>(type) - 1 < atoms.size());
 		return atoms[static_cast<unsigned int>(type) - 1];
 	}
-
 };
 
 
 #define BRACES(...) { __VA_ARGS__ }
 
-#define STO_3G_ATOM(atom, details) { atom, static_cast<unsigned int>(atom), {0,0,0}, details }
+#define STO_3G_ATOM(atom, details) { details }
 #define STO_3G_S(a1, c1, a2, c2, a3, c3) {{{{{a1, c1}, {a2, c2}, {a3, c3}}, {0,0,0} }}}
 #define STO_3G_SP(a1, c1_s, c1_p, a2, c2_s, c2_p, a3, c3_s, c3_p) {{ \
 	{{{a1, c1_s}, {a2, c2_s}, {a3, c3_s}}, {0,0,0}}, \
@@ -35,7 +58,7 @@ public:
 	{{{a1, c1_p}, {a2, c2_p}, {a3, c3_p}}, {0,0,1}} }}
 
 const Basis STO_3G{ "STO-3G",
-	// vector<Atom>
+	// std::vector<BasisAtom>
 	{
 		STO_3G_ATOM(ATOM_TYPE::Hydrogen, BRACES(
 			STO_3G_S(
@@ -330,7 +353,7 @@ const Basis STO_3G{ "STO-3G",
 	}
 };
 
-#define STO_6G_ATOM(atom, details) { atom, static_cast<unsigned int>(atom), {0,0,0}, details }
+#define STO_6G_ATOM(atom, details) { details }
 #define STO_6G_S(a1, c1, a2, c2, a3, c3, a4, c4, a5, c5, a6, c6) {{{{{a1, c1}, {a2, c2}, {a3, c3}, {a4, c4}, {a5, c5}, {a6, c6}}, {0,0,0} }}}
 #define STO_6G_SP(a1, c1_s, c1_p, a2, c2_s, c2_p, a3, c3_s, c3_p, a4, c4_s, c4_p, a5, c5_s, c5_p, a6, c6_s, c6_p) {{ \
 	{{{a1, c1_s}, {a2, c2_s}, {a3, c3_s}, {a4, c4_s}, {a5, c5_s}, {a6, c6_s} }, {0,0,0}}, \
@@ -339,7 +362,7 @@ const Basis STO_3G{ "STO-3G",
 	{{{a1, c1_p}, {a2, c2_p}, {a3, c3_p}, {a4, c4_s}, {a5, c5_s}, {a6, c6_s} }, {0,0,1}} }}
 
 const Basis STO_6G{ "STO-6G",
-// vector<Atom>
+// std::vector<BasisAtom>
 {
 	STO_6G_ATOM(ATOM_TYPE::Hydrogen, BRACES(
 		STO_6G_S(
