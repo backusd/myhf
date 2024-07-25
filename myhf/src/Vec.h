@@ -87,6 +87,12 @@ struct Vec3
 		return std::acos(cosTheta);
 	}
 	constexpr double GetPhi() const noexcept { return std::atan2(y, x); }
+
+	friend std::ostream& operator<<(std::ostream& os, const Vec3<T>& v)
+	{
+		os << '[' << v.x << ", " << v.y << ", " << v.z << ']';
+		return os;
+	}
 };
 
 template<typename T> Vec3<T> operator*(T o, const Vec3<T>& t) { return t * o; }
