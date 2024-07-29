@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "MatrixTests.h"
+#include "Log.h"
 
 #include <myhf.h>
 using namespace myhf;
@@ -191,8 +192,6 @@ int OverlapMatrixTest()
 			return 1;
 		}
 
-		
-
 		expectedOverlap = Eigen::MatrixXd(rowCount, colCount);
 		for (unsigned int row = 0; row < rowCount; ++row)
 			for (unsigned int col = 0; col < colCount; ++col)
@@ -210,8 +209,6 @@ int OverlapMatrixTest()
 				atoms.emplace_back(type, static_cast<unsigned int>(type), positions[iii]);
 			}
 
-//			atoms[0].position.z = -atoms[1].position.z;
-
 			Molecule molec(std::move(atoms), GetBasis(basis));
 			Eigen::MatrixXd actualOverlap = molec.OverlapMatrix();
 			
@@ -228,6 +225,38 @@ int OverlapMatrixTest()
 	}
 
 	std::cout << "\nDone\n\n";
+
+	std::println("\n");
+	std::println("\x1B[31mTexting\033[0m\t\t");
+	std::println("\x1B[32mTexting\033[0m\t\t");
+	std::println("\x1B[33mTexting\033[0m\t\t");
+	std::println("\x1B[34mTexting\033[0m\t\t");
+	std::println("\x1B[35mTexting\033[0m\n");
+
+	std::println("\x1B[36mTexting\033[0m\t\t");
+	std::println("\x1B[36mTexting\033[0m\t\t");
+	std::println("\x1B[36mTexting\033[0m\t\t");
+	std::println("\x1B[37mTexting\033[0m\t\t");
+	std::println("\x1B[93mTexting\033[0m\n");
+
+	std::println("\033[3;42;30mTexting\033[0m\t\t");
+	std::println("\033[3;43;30mTexting\033[0m\t\t");
+	std::println("\033[3;44;30mTexting\033[0m\t\t");
+	std::println("\033[3;104;30mTexting\033[0m\t\t");
+	std::println("\033[3;100;30mTexting\033[0m\n");
+
+	std::println("\033[3;47;35mTexting\033[0m\t\t");
+	std::println("\033[2;47;35mTexting\033[0m\t\t");
+	std::println("\033[1;47;35mTexting\033[0m\t\t");
+	std::println("\t\t");
+	std::println("\n");
+
+	LOG_TRACE("Trace: {0}", 1.23f);
+	LOG_INFO("Info: {0} - {1}", 1.23f, "Nope");
+	LOG_WARN("Warn: {0}", true);
+	LOG_ERROR("This is an error");
+	LOG_ERROR("This is also an error: {0} AND this {1}", 69, "you suck");
+
 
 	return 0;
 }

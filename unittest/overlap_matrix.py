@@ -7,7 +7,7 @@ import itertools
 atoms = ["H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", 
         "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca"]
 
-distances = [ 0.566918 ]
+distances = [ 0.5 ]
 
 basiss = [ "sto-3g", "sto-6g" ]
 
@@ -42,7 +42,7 @@ for i in range(len(atoms)):
 
                 result = {}
                 result["atoms"] = [ atom1, atom2 ]
-                result["positions"] = [0, 0, 0, distance, 0, 0]
+                result["positions"] = [mol._atom[0][1][0], mol._atom[0][1][1], mol._atom[0][1][2], mol._atom[1][1][0], mol._atom[1][1][1], mol._atom[1][1][2]]
                 result["basis"] = basis
                 result["overlap_rows"] = len(overlap)
                 result["overlap_cols"] = len(overlap[0])

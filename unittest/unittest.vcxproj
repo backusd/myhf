@@ -94,6 +94,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Log.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\MatrixTests.cpp" />
     <ClCompile Include="src\pch.cpp">
@@ -102,6 +103,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Log.h" />
     <ClInclude Include="src\MatrixTests.h" />
     <ClInclude Include="src\pch.h" />
   </ItemGroup>
