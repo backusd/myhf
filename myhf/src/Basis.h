@@ -46,6 +46,9 @@ struct Basis
 	}
 };
 
+const char* ToString(const Basis& basis);
+
+const Basis& GetBasis(std::string_view basis);
 
 #define BRACES(...) { __VA_ARGS__ }
 

@@ -1,3 +1,8 @@
+For unit testing, implement logging with colors
+
+
+
+
 Basis Sets
 	* Support the following basis sets:
 		- STO-3G, STO-6G, 6-31G, 6-31G* [aka 6-31G(d)], 6-31G** [aka 6-31G(d,p)]

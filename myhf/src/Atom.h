@@ -29,6 +29,11 @@ enum class ATOM_TYPE : unsigned int
 	Calcium		= 20
 };
 
+ATOM_TYPE GetAtomType(std::string_view type);
+const char* ToStringShortName(ATOM_TYPE type);
+const char* ToStringLongName(ATOM_TYPE type);
+const char* ToString(ATOM_TYPE type);
+
 struct Atom
 {
 	ATOM_TYPE	 type = ATOM_TYPE::Hydrogen;

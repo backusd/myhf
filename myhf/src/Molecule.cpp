@@ -47,7 +47,7 @@ MatrixXd Molecule::OverlapMatrix() noexcept
 
 				for (const auto& atom2 : atoms)
 				{
-					const BasisAtom& ba2 = basis.GetAtom(atom1.type);
+					const BasisAtom& ba2 = basis.GetAtom(atom2.type);
 
 					for (const auto& shell2 : ba2.shells)
 					{

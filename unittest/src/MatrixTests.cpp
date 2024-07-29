@@ -37,13 +37,9 @@ int OverlapMatrixTest()
 		return 1;
 	}
 
-	//std::cout << results.dump(4) << std::endl; 
-
-	int loopCounter = 0;
-
 	for (auto& result : results) 
 	{
-		std::vector<std::string> atoms;
+		std::vector<std::string> atomNames;
 		std::vector<Vec3d> positions;
 		std::string basis;
 		unsigned int rowCount = 0;
@@ -71,7 +67,7 @@ int OverlapMatrixTest()
 				return 1;
 			}
 
-			atoms.push_back(atom.get<std::string>());
+			atomNames.push_back(atom.get<std::string>());
 		}
 
 		// Positions
@@ -100,13 +96,13 @@ int OverlapMatrixTest()
 			_positions.push_back(pos.get<double>());
 		}
 
-		if (atoms.size() * 3 != _positions.size())
+		if (atomNames.size() * 3 != _positions.size())
 		{
-			std::println("Invalid result - The number of 'positions' values is {}, but should be {} because it should be 3 times the number of atoms ({})", _positions.size(), atoms.size() * 3, atoms.size());
+			std::println("Invalid result - The number of 'positions' values is {}, but should be {} because it should be 3 times the number of atoms ({})", _positions.size(), atomNames.size() * 3, atomNames.size());
 			return 1;
 		}
 
-		for (int iii = 0; iii < atoms.size(); ++iii)
+		for (int iii = 0; iii < atomNames.size(); ++iii)
 			positions.emplace_back(_positions[iii], _positions[iii + 1], _positions[iii + 2]);
 		
 		// Basis
@@ -202,28 +198,36 @@ int OverlapMatrixTest()
 			for (unsigned int col = 0; col < colCount; ++col)
 				expectedOverlap(row, col) = overlapValues[row * colCount + col];
 
-		std::cout << '[' << expectedOverlap << "]\n";
 
+		// Expected Overlap matrix has been parsed... Now do the test
+		try
+		{
+			std::vector<Atom> atoms;
+			atoms.reserve(atomNames.size());
+			for (int iii = 0; iii < atomNames.size(); ++iii)
+			{
+				ATOM_TYPE type = GetAtomType(atomNames[iii]);
+				atoms.emplace_back(type, static_cast<unsigned int>(type), positions[iii]);
+			}
 
-		++loopCounter;
-		if (loopCounter == 6)
-			break;
+//			atoms[0].position.z = -atoms[1].position.z;
+
+			Molecule molec(std::move(atoms), GetBasis(basis));
+			Eigen::MatrixXd actualOverlap = molec.OverlapMatrix();
+			
+			std::println("Molecule:\n{}", molec);
+			std::println("ACTUAL:\n{}", actualOverlap);
+			std::println("\nEXPECTED:\n{}", expectedOverlap);
+		}
+		catch (std::exception& ex)
+		{
+			std::println("ERROR: Caught exception: {}", ex.what());
+		}
+
+		break;
 	}
 
-
+	std::cout << "\nDone\n\n";
 
 	return 0;
-
-	//std::cout << "Unit test\n";
-	//
-	//std::array<Atom, 2> atoms =
-	//{
-	//	STO_3G.GetAtom(ATOM_TYPE::Hydrogen),
-	//	STO_3G.GetAtom(ATOM_TYPE::Hydrogen)
-	//};
-	//atoms[1].position = { 0.5356598775430879, 0, 0 }; //  0.283459 * 2
-	//Eigen::MatrixXd overlapMatrix = OverlapMatrix(atoms);
-	//
-	//
-	//std::print("{}", overlapMatrix);
 }

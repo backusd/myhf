@@ -90,7 +90,7 @@ struct Vec3
 
 	friend std::ostream& operator<<(std::ostream& os, const Vec3<T>& v)
 	{
-		os << '[' << v.x << ", " << v.y << ", " << v.z << ']';
+		os << std::setprecision(17) << '[' << v.x << ", " << v.y << ", " << v.z << ']';
 		return os;
 	}
 };
@@ -112,6 +112,6 @@ struct std::formatter<myhf::Vec3<T>>
 	}
 	auto format(const myhf::Vec3<T>& vec, std::format_context& ctx) const
 	{
-		return std::format_to(ctx.out(), "({}, {}, {})", vec.x, vec.y, vec.z);
+		return std::format_to(ctx.out(), "[{:.17f}, {:.17f}, {:.17f}]", vec.x, vec.y, vec.z);
 	}
 };

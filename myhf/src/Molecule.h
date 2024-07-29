@@ -30,3 +30,17 @@ private:
 	double GetOverlap(const BasisAtom& atom1, const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const BasisAtom& atom2, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept;
 };
 }
+
+template <>
+struct std::formatter<myhf::Molecule>
+{
+	constexpr auto parse(std::format_parse_context& ctx) noexcept { return ctx.begin(); }
+	auto format(const myhf::Molecule& molec, std::format_context& ctx) const
+	{
+		std::stringstream oss;
+		oss << "\tBasis: " << molec.basis.name << '\n';
+		for (const auto& atom : molec.atoms)
+			oss << '\t' << ToStringShortName(atom.type) << ' ' << atom.position << '\n';
+		return std::format_to(ctx.out(), "{}", oss.str());
+	}
+};
