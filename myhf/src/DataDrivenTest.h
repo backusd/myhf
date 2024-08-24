@@ -73,11 +73,19 @@ namespace test
 		
 		struct Atom
 		{
+			constexpr Atom() noexcept = default;
+			constexpr Atom(double posX, double posY, double posZ) noexcept : position{posX, posY, posZ} {}
+			constexpr Atom(const Vec3d& _position) noexcept : position(_position) {}
+
 			Vec3d position{};
 		};
 
 		struct Hydrogen : public Atom
 		{
+			constexpr Hydrogen() noexcept = default;
+			constexpr Hydrogen(double posX, double posY, double posZ) noexcept : Atom(posX, posY, posZ) {}
+			constexpr Hydrogen(const Vec3d& _position) noexcept : Atom(_position) {}
+
 			static constexpr S_Shell shell1{
 				std::array<ContractedGaussian<3>, 1>{
 					ContractedGaussian<3>{
@@ -94,6 +102,10 @@ namespace test
 
 		struct Oxygen : public Atom
 		{
+			constexpr Oxygen() noexcept = default;
+			constexpr Oxygen(double posX, double posY, double posZ) noexcept : Atom(posX, posY, posZ) {}
+			constexpr Oxygen(const Vec3d& _position) noexcept : Atom(_position) {}
+
 			static constexpr S_Shell shell1{
 				std::array<ContractedGaussian<3>, 1>{
 					ContractedGaussian<3>{

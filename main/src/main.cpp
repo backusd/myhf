@@ -5,6 +5,8 @@
 
 using namespace myhf;
 
+#include <chrono>
+
 //void PrintBasis(const Basis& b)
 //{
 //	std::println("Basis: {}", b.name);
@@ -25,6 +27,17 @@ using namespace myhf;
 //		}
 //	}
 //}
+
+struct scope_time
+{
+	scope_time() : start(std::chrono::system_clock::now()) {}
+	~scope_time()
+	{
+		std::println("Total Time: {}", std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start));
+	}
+
+	std::chrono::system_clock::time_point start{};
+};
 
 int main()
 {
@@ -49,15 +62,13 @@ int main()
 		{ ATOM_TYPE::Oxygen,   8, { 0,           0,  0.24026010 } }
 	};
 	Molecule molec(std::move(atoms), STO_3G);
-	Eigen::MatrixXd overlapMatrix = molec.OverlapMatrix();
-	std::println("{}", overlapMatrix);
 
-
+	for(int i = 0; i < 10; ++i)
+	{
+		scope_time s;
+		Eigen::MatrixXd overlapMatrix = molec.OverlapMatrix();
+	}
 	
-	std::vector<test::STO3G::Atom> sto3g_atoms = {
-		test::STO3G::Hydrogen{ Vec3d{ 0,  1.43233673, -0.96104039 } },
-		test::STO3G::Hydrogen{ Vec3d{ 0, -1.43233673, -0.96104039 } },
-		test::STO3G::Oxygen{ Vec3d{ 0,           0,  0.24026010 } }
-	};
-
+	Eigen::MatrixXd overlapMatrix = molec.OverlapMatrix();
+	std::println("{}\n", overlapMatrix);
 }
