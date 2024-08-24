@@ -33,7 +33,7 @@ struct scope_time
 	scope_time() : start(std::chrono::system_clock::now()) {}
 	~scope_time()
 	{
-		std::println("Total Time: {}", std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start));
+		std::println("Total Time: {}", std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start));
 	}
 
 	std::chrono::system_clock::time_point start{};
@@ -68,7 +68,18 @@ int main()
 		scope_time s;
 		Eigen::MatrixXd overlapMatrix = molec.OverlapMatrix();
 	}
+
+	std::println("=-------------------------------------------------------------");
+
+//	for (int i = 0; i < 10; ++i)
+//	{
+//		scope_time s;
+//		Eigen::MatrixXd overlapMatrix = molec.OverlapMatrix2();
+//	}
 	
 	Eigen::MatrixXd overlapMatrix = molec.OverlapMatrix();
 	std::println("{}\n", overlapMatrix);
+
+//	Eigen::MatrixXd overlapMatrix2 = molec.OverlapMatrix2();
+//	std::println("{}\n", overlapMatrix2);
 }
