@@ -4,3 +4,6 @@
 [submodule "vendor/json"]
 	path = vendor/json
 	url = https://github.com/nlohmann/json.git
+[submodule "vendor/gcem"]
+	path = vendor/gcem
+	url = https://github.com/kthohr/gcem.git
