@@ -8,6 +8,21 @@ using namespace myhf;
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
+#define OVERLAP_TEST(expression, msg) if (!(expression)) { OverlapTestFailed(msg, testNumber, numberOfTests, molec, expectedOverlap, actualOverlap); ++numFailures; failure = true; }
+
+static constexpr bool WithinMargin(double actual, double expected, double epsilon = 0.0000001) noexcept
+{
+	return actual + epsilon >= expected && actual - epsilon <= expected;
+}
+
+static void OverlapTestFailed(std::string_view msg, unsigned int testNumber, unsigned int numberOfTests, const Molecule& molec, const Eigen::MatrixXd& expected, const Eigen::MatrixXd& actual) noexcept
+{
+	LOG_ERROR("[FAILED] Test {0} / {1}: {2}", testNumber, numberOfTests, msg);
+	LOG_ERROR("Molecule:\n{0}", molec);
+	LOG_ERROR("Expected Overlap Matrix:\n\n{0}\n", expected);
+	LOG_ERROR("Computed Overlap Matrix:\n\n{0}", actual);
+}
+
 int OverlapMatrixTest()
 {
 	std::println("==============================================================================");
@@ -38,14 +53,28 @@ int OverlapMatrixTest()
 		return 1;
 	}
 
+	std::vector<std::string> atomNames;
+	std::vector<Vec3d> positions;
+	std::string basis;
+	unsigned int rowCount = 0;
+	unsigned int colCount = 0;
+	Eigen::MatrixXd expectedOverlap;
+	const double epsilon = 0.000001;
+
+	const unsigned int numberOfTests = static_cast<unsigned int>(results.size());
+	unsigned int testNumber = 0;
+	unsigned int numFailures = 0;
+
 	for (auto& result : results) 
 	{
-		std::vector<std::string> atomNames;
-		std::vector<Vec3d> positions;
-		std::string basis;
-		unsigned int rowCount = 0;
-		unsigned int colCount = 0;
-		Eigen::MatrixXd expectedOverlap;
+		if (numFailures > 0)
+			break;
+
+		++testNumber;
+
+		atomNames.clear();
+		positions.clear();
+		basis.clear();		
 
 		// Atoms
 		if (!result.contains("atoms"))
@@ -104,7 +133,7 @@ int OverlapMatrixTest()
 		}
 
 		for (int iii = 0; iii < atomNames.size(); ++iii)
-			positions.emplace_back(_positions[iii], _positions[iii + 1], _positions[iii + 2]);
+			positions.emplace_back(_positions[iii], _positions[static_cast<size_t>(iii) + 1], _positions[static_cast<size_t>(iii) + 2]);
 		
 		// Basis
 		if (!result.contains("basis"))
@@ -173,7 +202,7 @@ int OverlapMatrixTest()
 		}
 
 		std::vector<double> overlapValues;
-		overlapValues.reserve(rowCount * colCount);
+		overlapValues.reserve(static_cast<size_t>(rowCount) * colCount);
 		for (auto& o : result["overlap"])
 		{
 			if (!o.is_number())
@@ -186,7 +215,7 @@ int OverlapMatrixTest()
 			overlapValues.push_back(o.get<double>());
 		}
 
-		if (overlapValues.size() != rowCount * colCount)
+		if (overlapValues.size() != static_cast<size_t>(rowCount) * colCount)
 		{
 			std::println("Invalid result - 'overlap' field had {} values but the row/col values were {}/{} so there should have been {} values.", overlapValues.size(), rowCount, colCount, rowCount * colCount);
 			return 1;
@@ -195,12 +224,14 @@ int OverlapMatrixTest()
 		expectedOverlap = Eigen::MatrixXd(rowCount, colCount);
 		for (unsigned int row = 0; row < rowCount; ++row)
 			for (unsigned int col = 0; col < colCount; ++col)
-				expectedOverlap(row, col) = overlapValues[row * colCount + col];
+				expectedOverlap(row, col) = overlapValues[static_cast<size_t>(row) * colCount + col];
 
 
 		// Expected Overlap matrix has been parsed... Now do the test
 		try
 		{
+			bool failure = false;
+
 			std::vector<Atom> atoms;
 			atoms.reserve(atomNames.size());
 			for (int iii = 0; iii < atomNames.size(); ++iii)
@@ -211,52 +242,46 @@ int OverlapMatrixTest()
 
 			Molecule molec(std::move(atoms), GetBasis(basis));
 			Eigen::MatrixXd actualOverlap = molec.OverlapMatrix();
-			
-			std::println("Molecule:\n{}", molec);
-			std::println("ACTUAL:\n{}", actualOverlap);
-			std::println("\nEXPECTED:\n{}", expectedOverlap);
+
+			// 1. matrix shape must match
+			OVERLAP_TEST(static_cast<unsigned int>(actualOverlap.cols()) == colCount, "Column counts do not match");
+			if (failure) continue;
+
+			OVERLAP_TEST(static_cast<unsigned int>(actualOverlap.rows()) == rowCount, "Row counts do not match");
+			if (failure) continue;
+
+			// 2. Each value must be within the margin for error
+			for (unsigned int row_i = 0; row_i < rowCount; ++row_i)
+			{
+				for (unsigned int col_i = 0; col_i < colCount; ++col_i)
+				{
+					OVERLAP_TEST(WithinMargin(actualOverlap(row_i, col_i), expectedOverlap(row_i, col_i), epsilon), std::format("Overlap values at ({0}, {1}) do not match", row_i, col_i));
+					if (failure) 
+						break;
+				}
+				if (failure) break;
+			}
+			if (failure) continue;
+
+			// Report Success
+			std::string allNames;
+			for (const std::string& shortName : atomNames)
+			{
+				allNames += shortName;
+				allNames += ' ';
+			}
+			LOG_INFO("[PASSED] Test {0} / {1}: {2}", testNumber, numberOfTests, allNames); 
 		}
 		catch (std::exception& ex)
 		{
-			std::println("ERROR: Caught exception: {}", ex.what());
+			LOG_ERROR("ERROR: Caught exception: {}", ex.what());
 		}
-
-		break;
 	}
 
-	std::cout << "\nDone\n\n";
+	if (numFailures > 0)
+		LOG_WARN("SUMMARY: Passed = {0}   Failed = {1}", numberOfTests - numFailures, numFailures);
+	else
+		LOG_INFO("SUMMARY: All tests passed");
 
-	std::println("\n");
-	std::println("\x1B[31mTexting\033[0m\t\t");
-	std::println("\x1B[32mTexting\033[0m\t\t");
-	std::println("\x1B[33mTexting\033[0m\t\t");
-	std::println("\x1B[34mTexting\033[0m\t\t");
-	std::println("\x1B[35mTexting\033[0m\n");
-
-	std::println("\x1B[36mTexting\033[0m\t\t");
-	std::println("\x1B[36mTexting\033[0m\t\t");
-	std::println("\x1B[36mTexting\033[0m\t\t");
-	std::println("\x1B[37mTexting\033[0m\t\t");
-	std::println("\x1B[93mTexting\033[0m\n");
-
-	std::println("\033[3;42;30mTexting\033[0m\t\t");
-	std::println("\033[3;43;30mTexting\033[0m\t\t");
-	std::println("\033[3;44;30mTexting\033[0m\t\t");
-	std::println("\033[3;104;30mTexting\033[0m\t\t");
-	std::println("\033[3;100;30mTexting\033[0m\n");
-
-	std::println("\033[3;47;35mTexting\033[0m\t\t");
-	std::println("\033[2;47;35mTexting\033[0m\t\t");
-	std::println("\033[1;47;35mTexting\033[0m\t\t");
-	std::println("\t\t");
-	std::println("\n");
-
-	LOG_TRACE("Trace: {0}", 1.23f);
-	LOG_INFO("Info: {0} - {1}", 1.23f, "Nope");
-	LOG_WARN("Warn: {0}", true);
-	LOG_ERROR("This is an error");
-	LOG_ERROR("This is also an error: {0} AND this {1}", 69, "you suck");
-
-
-	return 0;
+	return numFailures;
 }

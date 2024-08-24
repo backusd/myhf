@@ -59,7 +59,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)myhf;$(SolutionDir)vendor\eigen\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)myhf;$(SolutionDir)vendor\eigen\;$(SolutionDir)vendor\gcem\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -80,7 +80,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(SolutionDir)myhf;$(SolutionDir)vendor\eigen\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)myhf;$(SolutionDir)vendor\eigen\;$(SolutionDir)vendor\gcem\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <PrecompiledHeader>Use</PrecompiledHeader>

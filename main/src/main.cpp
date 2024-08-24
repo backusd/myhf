@@ -44,10 +44,20 @@ int main()
 
 	std::vector<Atom> atoms = 
 	{ 
-		{ ATOM_TYPE::Hydrogen, 1, { 0, 0, 0 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.5356598775430879, 0, 0 } }
+		{ ATOM_TYPE::Hydrogen, 1, { 0,  1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 0, -1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Oxygen,   8, { 0,           0,  0.24026010 } }
 	};
 	Molecule molec(std::move(atoms), STO_3G);
 	Eigen::MatrixXd overlapMatrix = molec.OverlapMatrix();
-	std::print("{}", overlapMatrix);
+	std::println("{}", overlapMatrix);
+
+
+	
+	std::vector<test::STO3G::Atom> sto3g_atoms = {
+		test::STO3G::Hydrogen{ Vec3d{ 0,  1.43233673, -0.96104039 } },
+		test::STO3G::Hydrogen{ Vec3d{ 0, -1.43233673, -0.96104039 } },
+		test::STO3G::Oxygen{ Vec3d{ 0,           0,  0.24026010 } }
+	};
+
 }

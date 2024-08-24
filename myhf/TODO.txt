@@ -1,3 +1,25 @@
+Next Steps:
+    * [DONE] Compute the overlap matrix for H20 and make sure it matches the literature
+	* Do a data-driven re-write
+		- How does computation time compare?
+	* Can we get a performance increase from using a standard algorithm that can
+		parallelize some of the computation?
+
+
+
+Data driven rewrite:
+	* Get rid of generic orbital/shell/etc. classes
+	* Implement specific classes/structs for basis/shell/orbital combinations
+	* Add gcem (https://github.com/kthohr/gcem) to perform compile-time normalization computation
+		- Make sure normalization values agree
+	* Look at how the overlap computations are performed
+		- Is there room for improvement?
+		- Can we parallelize computing the different values in the overlap matrix?
+
+
+
+
+
 For unit testing, implement logging with colors
 
 

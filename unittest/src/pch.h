@@ -11,7 +11,9 @@
 #include <iostream>
 #include <memory>
 #include <numbers>
+#include <numeric>
 #include <print>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>

@@ -10,3 +10,5 @@
 #include "src/QuantumNumbers.h"
 #include "src/Shell.h"
 #include "src/Vec.h"
+
+#include "src/DataDrivenTest.h"
