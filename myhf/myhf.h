@@ -2,6 +2,7 @@
 
 #include "src/Atom.h"
 #include "src/Basis.h"
+#include "src/HF.h"
 #include "src/Integrals.h"
 #include "src/MathUtils.h"
 #include "src/Molecule.h"
