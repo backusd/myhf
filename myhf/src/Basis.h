@@ -360,9 +360,9 @@ const Basis STO_3G{ "STO-3G",
 #define STO_6G_S(a1, c1, a2, c2, a3, c3, a4, c4, a5, c5, a6, c6) {{{{{a1, c1}, {a2, c2}, {a3, c3}, {a4, c4}, {a5, c5}, {a6, c6}}, {0,0,0} }}}
 #define STO_6G_SP(a1, c1_s, c1_p, a2, c2_s, c2_p, a3, c3_s, c3_p, a4, c4_s, c4_p, a5, c5_s, c5_p, a6, c6_s, c6_p) {{ \
 	{{{a1, c1_s}, {a2, c2_s}, {a3, c3_s}, {a4, c4_s}, {a5, c5_s}, {a6, c6_s} }, {0,0,0}}, \
-	{{{a1, c1_p}, {a2, c2_p}, {a3, c3_p}, {a4, c4_s}, {a5, c5_s}, {a6, c6_s} }, {1,0,0}}, \
-	{{{a1, c1_p}, {a2, c2_p}, {a3, c3_p}, {a4, c4_s}, {a5, c5_s}, {a6, c6_s} }, {0,1,0}}, \
-	{{{a1, c1_p}, {a2, c2_p}, {a3, c3_p}, {a4, c4_s}, {a5, c5_s}, {a6, c6_s} }, {0,0,1}} }}
+	{{{a1, c1_p}, {a2, c2_p}, {a3, c3_p}, {a4, c4_p}, {a5, c5_p}, {a6, c6_p} }, {1,0,0}}, \
+	{{{a1, c1_p}, {a2, c2_p}, {a3, c3_p}, {a4, c4_p}, {a5, c5_p}, {a6, c6_p} }, {0,1,0}}, \
+	{{{a1, c1_p}, {a2, c2_p}, {a3, c3_p}, {a4, c4_p}, {a5, c5_p}, {a6, c6_p} }, {0,0,1}} }}
 
 const Basis STO_6G{ "STO-6G",
 // std::vector<BasisAtom>

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "HF.h"
 
+#include <execution>
 
 using Eigen::MatrixXd;
 
@@ -89,7 +90,7 @@ static double OverlapOfTwoPrimitiveGaussians(double alpha1, double alpha2, const
 		s_z[GetIndexZ(angularMomentum1.n, angularMomentum2.n)];
 }
 
-static double OverlapOfTwoOrbitals(const BasisAtom& atom1, const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const BasisAtom& atom2, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
+static double OverlapOfTwoOrbitals(const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
 {
 	double res = 0;
 
@@ -118,9 +119,7 @@ MatrixXd OverlapMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 	int i = 0;
 	for (const auto& atom1 : atoms)
 	{
-		const BasisAtom& ba1 = basis.GetAtom(atom1.type);
-
-		for (const auto& shell1 : ba1.shells)
+		for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
 		{
 			for (const auto& orbital1 : shell1.basisFunctions)
 			{
@@ -128,15 +127,13 @@ MatrixXd OverlapMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 
 				for (const auto& atom2 : atoms)
 				{
-					const BasisAtom& ba2 = basis.GetAtom(atom2.type);
-
-					for (const auto& shell2 : ba2.shells)
+					for (const auto& shell2 : basis.GetAtom(atom2.type).shells)
 					{
 						for (const auto& orbital2 : shell2.basisFunctions)
 						{
 							if (j > i)
 							{
-								overlapMatrix(i, j) = OverlapOfTwoOrbitals(ba1, orbital1, atom1.position, ba2, orbital2, atom2.position);
+								overlapMatrix(i, j) = OverlapOfTwoOrbitals(orbital1, atom1.position, orbital2, atom2.position);
 								overlapMatrix(j, i) = overlapMatrix(i, j);
 							}
 
@@ -151,8 +148,5 @@ MatrixXd OverlapMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 
 	return overlapMatrix;
 }
-
-
-
 
 }

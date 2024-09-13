@@ -7,7 +7,7 @@ import itertools
 atoms = ["H", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", 
         "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar", "K", "Ca"]
 
-distances = [ 0.5 ]
+distances = [ 1.0 ]
 
 basiss = [ "sto-3g", "sto-6g" ]
 
@@ -25,6 +25,7 @@ for i in range(len(atoms)):
                 mol.atom = atom1 + " 0 0 0; " + atom2 + " " + str(distance) + " 0 0"
                 mol.basis = basis
                 mol.spin = None
+                mol.unit = 'bohr'
                 mol.build()
 
                 print("atom  : ", mol.atom)
