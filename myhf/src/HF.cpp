@@ -7,6 +7,73 @@ using Eigen::MatrixXd;
 
 namespace myhf
 {
+static double OverlapOfTwoPrimitiveGaussiansAlongAxis(double oneDividedByAlpha1PlusAlpha2, double alpha1, double alpha2, double position1, double position2, unsigned int angularMomentum1, unsigned int angularMomentum2) noexcept
+{
+	// Helper class for keeping track of the recurrence relation values with data that resides on the stack
+	class StackMatrix2D
+	{
+	public:
+		// Example:
+		//    Supposed we need to return the value 'matrix[a, b]'. To compute that value, you must
+		//    have already computed 'matrix[a+1, b-1]' - this is the value located down 1 and left 1 spot
+		//	  in the matrix. If you continuing this logic, you will eventually get to the first column of the
+		//	  matrix, which will tell us how many rows we need. Notice that along that diagonal in the matrix, 
+		//    the row index plus the column index have a constant value (a + b). To adjust for the off-by-one 
+		//    error, we also add one.
+		StackMatrix2D(unsigned int angularMomentum1, unsigned int angularMomentum2) noexcept :
+			rowCount(angularMomentum1 + angularMomentum2 + 1), colCount(angularMomentum2 + 1), values(nullptr)
+		{
+			values = static_cast<double*>(alloca(sizeof(double) * rowCount * colCount));
+		}
+		constexpr double& operator()(unsigned int row, unsigned int col) noexcept
+		{
+			assert(row >= 0 && row < rowCount);
+			assert(col >= 0 && col < colCount);
+			return values[row * colCount + col];
+		}
+		constexpr unsigned int RowCount() const noexcept { return rowCount; }
+		constexpr unsigned int ColumnCount() const noexcept { return colCount; }
+
+	private:
+		unsigned int rowCount;
+		unsigned int colCount;
+		double* values;
+	};
+
+	if (angularMomentum1 == 0 && angularMomentum2 == 0)
+		return 1.0;
+
+	StackMatrix2D matrix(angularMomentum1, angularMomentum2); 
+
+	// X: Initial conditions
+	matrix(0, 0) = 1.0;
+	double startingValue = -(position1 - ((alpha1 * position1 + alpha2 * position2) * oneDividedByAlpha1PlusAlpha2));
+	matrix(1, 0) = startingValue;
+
+	// X: Recurrence Index
+	for (unsigned int iii = 2; iii < matrix.RowCount(); ++iii)
+		matrix(iii, 0) = startingValue * matrix(iii - 1, 0) + ((iii - 1) * 0.5 * oneDividedByAlpha1PlusAlpha2) * matrix(iii - 2, 0);
+
+	// X: Transfer Equation
+	//
+	// The recurrence relation requires filling out each column before moving on to the next one.
+	// Therefore, the outer loop must be the loop over the columns
+	for (unsigned int col = 1; col < matrix.ColumnCount(); ++col)
+	{
+		// The conditional here is a little weird. Basically, we have set up a matrix to store the recurrence values in. 
+		// However, the bottom right half of values will never get used (and cannot be calculated without expanding the matrix). 
+		// For example, consider trying to compute matrix[0, 2]. The matrix will look something like this:
+		//		v1	v4	v6
+		//		v2	v5	-
+		//		v3	-	-
+		// We only need to compute up to v6 and don't need the '-' values and we wouldn't even be able to compute them unless we added more rows.
+
+		for (unsigned int row = 0; row + col <= angularMomentum1 + angularMomentum2; ++row)
+			matrix(row, col) = matrix(row + 1, col - 1) + (position1 - position2) * matrix(row, col - 1);
+	}
+
+	return matrix(angularMomentum1, angularMomentum2);
+}
 
 static double OverlapOfTwoPrimitiveGaussians(double alpha1, double alpha2, const Vec3d& position1, const Vec3d& position2, const QuantumNumbers& angularMomentum1, const QuantumNumbers& angularMomentum2) noexcept
 {
@@ -14,80 +81,15 @@ static double OverlapOfTwoPrimitiveGaussians(double alpha1, double alpha2, const
 	assert(std::max(angularMomentum1.m, angularMomentum2.m) + 1 < 4);
 	assert(std::max(angularMomentum1.n, angularMomentum2.n) + 1 < 4);
 
-	unsigned int maxAngularMomentumX = std::max(angularMomentum1.l, angularMomentum2.l);
-	unsigned int maxAngularMomentumY = std::max(angularMomentum1.m, angularMomentum2.m);
-	unsigned int maxAngularMomentumZ = std::max(angularMomentum1.n, angularMomentum2.n);
+	const double oneDividedByAlpha1PlusAlpha2 = 1 / (alpha1 + alpha2);
+	double s_x_value = OverlapOfTwoPrimitiveGaussiansAlongAxis(oneDividedByAlpha1PlusAlpha2, alpha1, alpha2, position1.x, position2.x, angularMomentum1.l, angularMomentum2.l);
+	double s_y_value = OverlapOfTwoPrimitiveGaussiansAlongAxis(oneDividedByAlpha1PlusAlpha2, alpha1, alpha2, position1.y, position2.y, angularMomentum1.m, angularMomentum2.m);
+	double s_z_value = OverlapOfTwoPrimitiveGaussiansAlongAxis(oneDividedByAlpha1PlusAlpha2, alpha1, alpha2, position1.z, position2.z, angularMomentum1.n, angularMomentum2.n);
 
-	auto GetIndexX = [maxX = maxAngularMomentumX](unsigned int x, unsigned int y) -> unsigned int { return y * maxX + x; };
-	auto GetIndexY = [maxY = maxAngularMomentumY](unsigned int x, unsigned int y) -> unsigned int { return y * maxY + x; };
-	auto GetIndexZ = [maxZ = maxAngularMomentumZ](unsigned int x, unsigned int y) -> unsigned int { return y * maxZ + x; };
-
-	double oneDividedByAlpha1PlusAlpha2 = 1 / (alpha1 + alpha2);
-
-	// X ==============================================================================
-	// NOTE: I use alloca here for 2 reasons:
-	//			1. It allows for allocating the exact number of bytes needed, whereas we could have gone with a fixed length 
-	//             2D array, but that would require us to pick the size ahead of time (which might lead to a poor choice)
-	//			2. There is better cache coherency when all the values are as tightly packed as possible
-	double* s_x = static_cast<double*>(alloca(sizeof(double) * (maxAngularMomentumX + 2) * (maxAngularMomentumX + 1)));
-
-	// X: Initial conditions
-	s_x[GetIndexX(0, 0)] = 1.0;
-	double startingValue = -(position1.x - ((alpha1 * position1.x + alpha2 * position2.x) * oneDividedByAlpha1PlusAlpha2));
-	s_x[GetIndexX(1, 0)] = startingValue;
-
-	// X: Recurrence Index
-	unsigned int maxAngularMomentumPlus1 = maxAngularMomentumX + 1;
-	for (unsigned int iii = 2; iii <= maxAngularMomentumPlus1; ++iii)
-		s_x[GetIndexX(iii, 0)] = startingValue * s_x[GetIndexX(iii - 1, 0)] + ((iii - 1) * 0.5 * oneDividedByAlpha1PlusAlpha2) * s_x[GetIndexX(iii - 2, 0)];
-
-	// X: Transfer Equation
-	for (unsigned int iii = 0; iii < maxAngularMomentumX; ++iii)
-		s_x[GetIndexX(iii, iii + 1)] = s_x[GetIndexX(iii + 1, iii)] + (position1.x - position2.x) * s_x[GetIndexX(iii, iii)];
-
-
-	// Y ==============================================================================
-	double* s_y = static_cast<double*>(alloca(sizeof(double) * (maxAngularMomentumY + 2) * (maxAngularMomentumY + 1)));
-
-	// Y: Initial conditions
-	s_y[GetIndexY(0, 0)] = 1.0;
-	startingValue = -(position1.y - ((alpha1 * position1.y + alpha2 * position2.y) * oneDividedByAlpha1PlusAlpha2));
-	s_y[GetIndexY(1, 0)] = startingValue;
-
-	// Y: Recurrence Index
-	maxAngularMomentumPlus1 = maxAngularMomentumY + 1;
-	for (unsigned int iii = 2; iii <= maxAngularMomentumPlus1; ++iii)
-		s_y[GetIndexY(iii, 0)] = startingValue * s_y[GetIndexY(iii - 1, 0)] + ((iii - 1) * 0.5 * oneDividedByAlpha1PlusAlpha2) * s_y[GetIndexY(iii - 2, 0)];
-
-	// Y: Transfer Equation
-	for (unsigned int iii = 0; iii < maxAngularMomentumY; ++iii)
-		s_y[GetIndexY(iii, iii + 1)] = s_y[GetIndexY(iii + 1, iii)] + (position1.y - position2.y) * s_y[GetIndexY(iii, iii)];
-
-
-	// Z ==============================================================================
-	double* s_z = static_cast<double*>(alloca(sizeof(double) * (maxAngularMomentumZ + 2) * (maxAngularMomentumZ + 1)));
-
-	// Z: Initial conditions
-	s_z[GetIndexZ(0, 0)] = 1.0;
-	startingValue = -(position1.z - ((alpha1 * position1.z + alpha2 * position2.z) * oneDividedByAlpha1PlusAlpha2));
-	s_z[GetIndexZ(1, 0)] = startingValue;
-
-	// Z: Recurrence Index
-	maxAngularMomentumPlus1 = maxAngularMomentumZ + 1;
-	for (unsigned int iii = 2; iii <= maxAngularMomentumPlus1; ++iii)
-		s_z[GetIndexZ(iii, 0)] = startingValue * s_z[GetIndexZ(iii - 1, 0)] + ((iii - 1) * 0.5 * oneDividedByAlpha1PlusAlpha2) * s_z[GetIndexZ(iii - 2, 0)];
-
-	// Z: Transfer Equation
-	for (unsigned int iii = 0; iii < maxAngularMomentumZ; ++iii)
-		s_z[GetIndexZ(iii, iii + 1)] = s_z[GetIndexZ(iii + 1, iii)] + (position1.z - position2.z) * s_z[GetIndexZ(iii, iii)];
-
-	// Overlap =======================================================================
 	Vec3d diff = position2 - position1;
 	return std::exp(-1 * alpha1 * alpha2 * oneDividedByAlpha1PlusAlpha2 * diff.Dot(diff)) *
 		std::pow(std::numbers::pi * oneDividedByAlpha1PlusAlpha2, 1.5) *
-		s_x[GetIndexX(angularMomentum1.l, angularMomentum2.l)] *
-		s_y[GetIndexY(angularMomentum1.m, angularMomentum2.m)] *
-		s_z[GetIndexZ(angularMomentum1.n, angularMomentum2.n)];
+		s_x_value * s_y_value * s_z_value;
 }
 
 static double OverlapOfTwoOrbitals(const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
