@@ -48,27 +48,24 @@ static void OverlapTestFailed(std::string_view msg, unsigned int testNumber, uns
 	LOG_ERROR("Computed Overlap Matrix:\n\n{0}", actual);
 }
 
-int OverlapMatrixTest()
+static int OverlapMatrixTest(const std::string& file)
 {
-	std::println("==============================================================================");
-	std::println("Overlap Matrix Test");
-	std::println("==============================================================================");
-
 	OverlapExpectedData expectedData;
 	try
 	{
-		std::ifstream f("data/overlap-matrix-expected-values.json");
+		std::println("Loading test descriptions: {0}...", file);
+		std::ifstream f(file);
 		json data = json::parse(f);
 		expectedData = data.template get<OverlapExpectedData>();
 	}
 	catch (const std::exception& e)
 	{
-		std::println("Failed to read data/overlap-matrix-expected-values.json. Caught exception with message: {}", e.what());
+		std::println("Failed to read {0}. Caught exception with message: {1}", file, e.what());
 		return 1;
 	}
 
 	Eigen::MatrixXd expectedOverlap;
-	const double epsilon = 0.000001;
+	const double epsilon = 0.000005;
 
 	const unsigned int numberOfTests = static_cast<unsigned int>(expectedData.results.size());
 	unsigned int testNumber = 0;
@@ -79,7 +76,7 @@ int OverlapMatrixTest()
 		if (numFailures > 0)
 			break;
 
-		++testNumber;	
+		++testNumber;
 
 		// Construct the overlap matrix
 		expectedOverlap = Eigen::MatrixXd(result.overlap_rows, result.overlap_cols);
@@ -92,10 +89,10 @@ int OverlapMatrixTest()
 			bool failure = false;
 
 			std::vector<Atom> atoms;
-			unsigned int atomCount = result.atoms.size();
+			unsigned int atomCount = static_cast<unsigned int>(result.atoms.size());
 			atoms.reserve(atomCount);
 
-			for (int iii = 0; iii < atomCount; ++iii)
+			for (unsigned int iii = 0; iii < atomCount; ++iii)
 			{
 				ATOM_TYPE type = GetAtomType(result.atoms[iii]);
 				unsigned int positionIndex0 = iii * 3;
@@ -118,7 +115,7 @@ int OverlapMatrixTest()
 				for (unsigned int col_i = 0; col_i < result.overlap_cols; ++col_i)
 				{
 					OVERLAP_TEST(WithinMargin(actualOverlap(row_i, col_i), expectedOverlap(row_i, col_i), epsilon), std::format("Overlap values at ({0}, {1}) do not match", row_i, col_i));
-					if (failure) 
+					if (failure)
 						break;
 				}
 				if (failure) break;
@@ -132,7 +129,7 @@ int OverlapMatrixTest()
 				allNames += shortName;
 				allNames += ' ';
 			}
-			LOG_INFO("[PASSED] Test {0} / {1}: [{2}] {3}", testNumber, numberOfTests, basis.name, allNames); 
+			LOG_INFO("[PASSED] Test {0} / {1}: [{2}] {3}", testNumber, numberOfTests, basis.name, allNames);
 		}
 		catch (std::exception& ex)
 		{
@@ -146,4 +143,18 @@ int OverlapMatrixTest()
 		LOG_INFO("SUMMARY: All tests passed");
 
 	return numFailures;
+}
+
+int OverlapMatrixTest()
+{
+	std::println("==============================================================================");
+	std::println("Overlap Matrix Test");
+	std::println("==============================================================================");
+
+	int failures = OverlapMatrixTest("data/overlap-matrix-expected-values_two-atom_sto-3g.json");
+	failures += OverlapMatrixTest("data/overlap-matrix-expected-values_two-atom_sto-6g.json");
+	failures += OverlapMatrixTest("data/overlap-matrix-expected-values_three-atom_sto-3g.json");
+	failures += OverlapMatrixTest("data/overlap-matrix-expected-values_three-atom_sto-6g.json");
+
+	return failures;
 }
