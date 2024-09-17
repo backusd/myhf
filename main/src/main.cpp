@@ -33,18 +33,18 @@ int main()
 
 	std::println("-------------------------------------------------------------");
 
-	for (int i = 0; i < 10; ++i)
-	{
-		scope_time s;
-		Eigen::MatrixXd overlapMatrix = OverlapMatrix2(atoms, STO_3G);
-	}
-
-	
-	Eigen::MatrixXd overlapMatrix = OverlapMatrix(atoms, STO_3G);
-	std::println("{}\n", overlapMatrix);
-
-
-
-	Eigen::MatrixXd overlapMatrix2 = OverlapMatrix2(atoms, STO_3G);
-	std::println("\n\n{}\n", overlapMatrix2);
+//	for (int i = 0; i < 10; ++i)
+//	{
+//		scope_time s;
+//		Eigen::MatrixXd overlapMatrix = OverlapMatrix2(atoms, STO_3G);
+//	}
+//
+//	
+//	Eigen::MatrixXd overlapMatrix = OverlapMatrix(atoms, STO_3G);
+//	std::println("{}\n", overlapMatrix);
+//
+//
+//
+//	Eigen::MatrixXd overlapMatrix2 = OverlapMatrix2(atoms, STO_3G);
+//	std::println("\n\n{}\n", overlapMatrix2);
 }

@@ -1,3 +1,14 @@
+* Understand the caching that the other code does - is that something actually beneficial?
+* Add a new project for performance testing
+	- Test via Google Benchmark
+	- Compare results against the other dude's code
+
+
+
+
+
+
+
 Next Steps:
     * [DONE] Compute the overlap matrix for H20 and make sure it matches the literature
 	* Do a data-driven re-write
