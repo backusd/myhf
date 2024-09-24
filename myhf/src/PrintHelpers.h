@@ -11,7 +11,7 @@ struct std::formatter<Eigen::MatrixXd>
 	auto format(const Eigen::MatrixXd& mat, std::format_context& ctx) const
 	{
 		std::ostringstream oss;
-		oss << std::setprecision(7) << mat;
+		oss << std::setprecision(8) << mat;
 		return std::format_to(ctx.out(), "{}", oss.str());
 	}
 };

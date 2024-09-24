@@ -2,3 +2,4 @@
 
 
 int OverlapMatrixTest();
+int KineticEnergyMatrixTest();

@@ -5,10 +5,10 @@
 #include "Vec.h"
 
 
-#include "gcem.hpp"
-
-namespace myhf
-{
+//#include "gcem.hpp"
+//
+//namespace myhf
+//{
 //namespace test
 //{
 //	struct PrimitiveGaussian
@@ -59,6 +59,66 @@ namespace myhf
 //		std::array<PrimitiveGaussian, NumPrimitives> primitiveGaussians;
 //		QuantumNumbers angularMomentum{};
 //	};
+//
+//	template<size_t NumOrbitals, size_t NumPrimitives>
+//	struct BasisAtom
+//	{
+//		std::array<ContractedGaussian<NumPrimitives>, NumOrbitals> orbitals;
+//	};
+//
+//	namespace STO_3G
+//	{
+//		static constexpr BasisAtom<1, 3> Hydrogen = {
+//			std::array<ContractedGaussian<3>, 1>{
+//				ContractedGaussian<3>{
+//					std::array<PrimitiveGaussian, 3>{
+//						PrimitiveGaussian(0.3425250914E+01, 0.1543289673E+00, QN_1s),
+//						PrimitiveGaussian(0.6239137298E+00, 0.5353281423E+00, QN_1s),
+//						PrimitiveGaussian(0.1688554040E+00, 0.4446345422E+00, QN_1s)
+//					},
+//					QN_1s
+//				}
+//			}
+//		};
+//
+//		template<ATOM_TYPE Type>
+//		constexpr const auto& GetAtom()
+//		{
+//			if constexpr (Type == ATOM_TYPE::Hydrogen) return STO_3G::Hydrogen;
+//		}
+//
+//		constexpr const BasisAtom& GetAtom(ATOM_TYPE type) noexcept
+//		{
+//			assert(static_cast<unsigned int>(type) > 0);
+//			assert(static_cast<unsigned int>(type) - 1 < atoms.size());
+//			return atoms[static_cast<unsigned int>(type) - 1];
+//		}
+//	};
+//
+//	namespace STO_3G
+//	{
+//		static constexpr size_t PrimitiveCount = 3;
+//
+//		static constexpr QuantumNumbers QN_1s(0, 0, 0);
+//		static constexpr QuantumNumbers QN_2s(0, 0, 0);
+//		static constexpr QuantumNumbers QN_2px(1, 0, 0);
+//		static constexpr QuantumNumbers QN_2py(0, 1, 0);
+//		static constexpr QuantumNumbers QN_2pz(0, 0, 1);
+//		
+//	//	static constexpr BasisAtom<1, 3> Hydrogen = {
+//	//		std::array<ContractedGaussian<3>, 1>{
+//	//			ContractedGaussian<3>{
+//	//				std::array<PrimitiveGaussian, 3>{
+//	//					PrimitiveGaussian(0.3425250914E+01, 0.1543289673E+00, QN_1s),
+//	//					PrimitiveGaussian(0.6239137298E+00, 0.5353281423E+00, QN_1s),
+//	//					PrimitiveGaussian(0.1688554040E+00, 0.4446345422E+00, QN_1s)
+//	//				},
+//	//				QN_1s
+//	//			}
+//	//		}
+//	//	};
+//	}
+//
 //
 //	template<size_t NumGaussians, size_t NumPrimitives>
 //	struct ContractedGaussianShell
@@ -164,4 +224,4 @@ namespace myhf
 //
 //
 //}
-}
+//}

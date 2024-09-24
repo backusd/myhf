@@ -1,37 +1,11 @@
-* Understand the caching that the other code does - is that something actually beneficial?
-* Add a new project for performance testing
-	- Test via Google Benchmark
-	- Compare results against the other dude's code
+* Start working on the nuclear repulsion matrix
 
 
 
-
-
-
-
-Next Steps:
-    * [DONE] Compute the overlap matrix for H20 and make sure it matches the literature
-	* Do a data-driven re-write
-		- How does computation time compare?
-	* Can we get a performance increase from using a standard algorithm that can
-		parallelize some of the computation?
-
-
-
-Data driven rewrite:
-	* Get rid of generic orbital/shell/etc. classes
-	* Implement specific classes/structs for basis/shell/orbital combinations
-	* Add gcem (https://github.com/kthohr/gcem) to perform compile-time normalization computation
-		- Make sure normalization values agree
-	* Look at how the overlap computations are performed
-		- Is there room for improvement?
-		- Can we parallelize computing the different values in the overlap matrix?
-
-
-
-
-
-For unit testing, implement logging with colors
+Things to test the performance of:
+* A combined Overlap/Kinetic computation function that re-uses s_x,y,z matrices
+	- Also test a variant that returns a tuple of MatrixXd vs. taking 2 MatrixXd references
+      as out parameters
 
 
 
@@ -41,16 +15,11 @@ Basis Sets
 		- STO-3G, STO-6G, 6-31G, 6-31G* [aka 6-31G(d)], 6-31G** [aka 6-31G(d,p)]
 	* Support all atoms up to Calcium (20)
 
-Overlap Matrix
-	* Make sure we can compute the overlap matrix for a variety of atoms/positions
-	* Make sure results align with the Hartree Fock program, PySCF, and published values
-	* Look at the PySCF implmentation and look for potential improvements
-	* Does it actually help to cache computed values? Is there not a way to simply
-		omit any attempt to calculate those values in the first place?
-
-Profiling
-	* Go ahead and add profiling now so we have it from the outset
 
 Unit Tests
-	* Add unit tests for all computations
-	* Cite sources for expected values
+	* Right now, unit tests are just set up to make sure we align with the other
+		C++ Hartree-Fock program. Ideally, we should assemble as many unit tests
+		as we can where the values actually come from the literature (and therefore,
+		we should track those citations). 
+			- In thinking about it, I feel like such a set of data might already exist,
+			  but if not, then it probably should be created.
