@@ -1,4 +1,4 @@
-* Start working on the nuclear repulsion matrix
+* Write a unit test for the combined Overlap/Kinetic calculation
 
 
 

@@ -302,4 +302,91 @@ MatrixXd KineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 	return kineticMatrix;
 }
 
+
+
+
+static std::pair<double, double> OverlapAndKineticEnergyOfTwoPrimitiveGaussians(double alpha1, double alpha2, const Vec3d& position1, const Vec3d& position2, const QuantumNumbers& angularMomentum1, const QuantumNumbers& angularMomentum2) noexcept
+{
+	const double oneDividedByAlpha1PlusAlpha2 = 1 / (alpha1 + alpha2);
+	auto [s_x_value, k_x_value] = KineticEnergyOfTwoPrimitiveGaussiansAlongAxis(oneDividedByAlpha1PlusAlpha2, alpha1, alpha2, position1.x, position2.x, angularMomentum1.l, angularMomentum2.l);
+	auto [s_y_value, k_y_value] = KineticEnergyOfTwoPrimitiveGaussiansAlongAxis(oneDividedByAlpha1PlusAlpha2, alpha1, alpha2, position1.y, position2.y, angularMomentum1.m, angularMomentum2.m);
+	auto [s_z_value, k_z_value] = KineticEnergyOfTwoPrimitiveGaussiansAlongAxis(oneDividedByAlpha1PlusAlpha2, alpha1, alpha2, position1.z, position2.z, angularMomentum1.n, angularMomentum2.n);
+
+	Vec3d diff = position2 - position1;
+	double factor = std::exp(-1 * alpha1 * alpha2 * oneDividedByAlpha1PlusAlpha2 * diff.Dot(diff)) *
+		std::pow(std::numbers::pi * oneDividedByAlpha1PlusAlpha2, 1.5);
+
+	return { factor * s_x_value * s_y_value * s_z_value, 
+		   factor *
+		   (k_x_value * s_y_value * s_z_value +
+			s_x_value * k_y_value * s_z_value +
+			s_x_value * s_y_value * k_z_value) };
+}
+static std::pair<double, double> OverlapAndKineticEnergyOfTwoOrbitals(const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
+{
+	double overlapResult = 0.0;
+	double kineticResult = 0.0;
+
+	for (auto& gaussian1 : orbital1.gaussianOrbitals)
+	{
+		for (auto& gaussian2 : orbital2.gaussianOrbitals)
+		{
+			double factor = gaussian1.normalizationFactor * gaussian2.normalizationFactor * gaussian1.coefficient * gaussian2.coefficient;
+			auto [overlap, kinetic] = OverlapAndKineticEnergyOfTwoPrimitiveGaussians(gaussian1.alpha, gaussian2.alpha, position1, position2, orbital1.angularMomentum, orbital2.angularMomentum);
+			
+			overlapResult += factor * overlap;
+			kineticResult += factor * kinetic;
+		}
+	}
+	return { overlapResult, kineticResult };
+}
+void OverlapAndKineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis, Eigen::MatrixXd& overlapMatrix, Eigen::MatrixXd& kineticEnergyMatrix) noexcept
+{
+	assert(atoms.size() > 1);
+	unsigned int numberOfContractedGaussians = 0;
+	for (const Atom& atom : atoms)
+		numberOfContractedGaussians += basis.GetAtom(atom.type).NumberOfContractedGaussians();
+
+	overlapMatrix = MatrixXd::Identity(numberOfContractedGaussians, numberOfContractedGaussians);
+	kineticEnergyMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
+
+	int i = 0;
+	for (const auto& atom1 : atoms)
+	{
+		for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
+		{
+			for (const auto& orbital1 : shell1.basisFunctions)
+			{
+				int j = 0;
+
+				for (const auto& atom2 : atoms)
+				{
+					for (const auto& shell2 : basis.GetAtom(atom2.type).shells)
+					{
+						for (const auto& orbital2 : shell2.basisFunctions)
+						{
+							if (j >= i)
+							{
+								auto [overlap, kinetic] = OverlapAndKineticEnergyOfTwoOrbitals(orbital1, atom1.position, orbital2, atom2.position);
+								overlapMatrix(i, j) = overlap;
+								kineticEnergyMatrix(i, j) = kinetic;
+
+								if (j > i)
+								{
+									overlapMatrix(j, i) = overlapMatrix(i, j);
+									kineticEnergyMatrix(j, i) = kineticEnergyMatrix(i, j);
+								}
+							}
+
+							++j;
+						}
+					}
+				}
+				++i;
+			}
+		}
+	}
+}
+
+
 }

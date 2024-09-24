@@ -6,6 +6,7 @@
 
 using namespace myhf;
 
+// Overlap Matrix --------------------------------------------------------------------------
 static void Overlap_HH_STO3G(benchmark::State& state) 
 {
 	std::vector<Atom> atoms
@@ -59,6 +60,228 @@ static void Overlap_H2O_STO6G(benchmark::State& state)
 		Eigen::MatrixXd overlap = OverlapMatrix(atoms, STO_6G);
 }
 BENCHMARK(Overlap_H2O_STO6G);
+
+static void Overlap_CH4_STO3G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
+		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = OverlapMatrix(atoms, STO_3G);
+}
+BENCHMARK(Overlap_CH4_STO3G);
+
+static void Overlap_CH4_STO6G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
+		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = OverlapMatrix(atoms, STO_6G);
+}
+BENCHMARK(Overlap_CH4_STO6G);
+
+// Kinetic Matrix --------------------------------------------------------------------------
+static void Kinetic_HH_STO3G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = KineticEnergyMatrix(atoms, STO_3G);
+}
+BENCHMARK(Kinetic_HH_STO3G);
+
+static void Kinetic_HH_STO6G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = KineticEnergyMatrix(atoms, STO_6G);
+}
+BENCHMARK(Kinetic_HH_STO6G);
+
+static void Kinetic_H2O_STO3G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = KineticEnergyMatrix(atoms, STO_3G);
+}
+BENCHMARK(Kinetic_H2O_STO3G);
+
+static void Kinetic_H2O_STO6G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = KineticEnergyMatrix(atoms, STO_6G);
+}
+BENCHMARK(Kinetic_H2O_STO6G);
+
+static void Kinetic_CH4_STO3G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
+		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = KineticEnergyMatrix(atoms, STO_3G);
+}
+BENCHMARK(Kinetic_CH4_STO3G);
+
+static void Kinetic_CH4_STO6G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
+		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = KineticEnergyMatrix(atoms, STO_6G);
+}
+BENCHMARK(Kinetic_CH4_STO6G);
+
+// Overlap AND Kinetic Matrix --------------------------------------------------------------------------
+static void Overlap_and_Kinetic_HH_STO3G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
+	};
+
+	Eigen::MatrixXd overlap, kinetic;
+	for (auto _ : state)
+		OverlapAndKineticEnergyMatrix(atoms, STO_3G, overlap, kinetic);
+}
+BENCHMARK(Overlap_and_Kinetic_HH_STO3G);
+
+static void Overlap_and_Kinetic_HH_STO6G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
+	};
+
+	Eigen::MatrixXd overlap, kinetic;
+	for (auto _ : state)
+		OverlapAndKineticEnergyMatrix(atoms, STO_6G, overlap, kinetic);
+}
+BENCHMARK(Overlap_and_Kinetic_HH_STO6G);
+
+static void Overlap_and_Kinetic_H2O_STO3G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
+	};
+
+	Eigen::MatrixXd overlap, kinetic;
+	for (auto _ : state)
+		OverlapAndKineticEnergyMatrix(atoms, STO_3G, overlap, kinetic);
+}
+BENCHMARK(Overlap_and_Kinetic_H2O_STO3G);
+
+static void Overlap_and_Kinetic_H2O_STO6G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
+	};
+
+	Eigen::MatrixXd overlap, kinetic;
+	for (auto _ : state)
+		OverlapAndKineticEnergyMatrix(atoms, STO_6G, overlap, kinetic);
+}
+BENCHMARK(Overlap_and_Kinetic_H2O_STO6G);
+
+static void Overlap_and_Kinetic_CH4_STO3G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
+		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
+	};
+
+	Eigen::MatrixXd overlap, kinetic;
+	for (auto _ : state)
+		OverlapAndKineticEnergyMatrix(atoms, STO_3G, overlap, kinetic);
+}
+BENCHMARK(Overlap_and_Kinetic_CH4_STO3G);
+
+static void Overlap_and_Kinetic_CH4_STO6G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
+		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
+		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
+	};
+
+	Eigen::MatrixXd overlap, kinetic;
+	for (auto _ : state)
+		OverlapAndKineticEnergyMatrix(atoms, STO_6G, overlap, kinetic);
+}
+BENCHMARK(Overlap_and_Kinetic_CH4_STO6G);
+
+
+
+
+
+
+
+
+
+
 
 
 
