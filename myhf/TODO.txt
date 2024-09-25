@@ -1,11 +1,4 @@
-* Write a unit test for the combined Overlap/Kinetic calculation
 
-
-
-Things to test the performance of:
-* A combined Overlap/Kinetic computation function that re-uses s_x,y,z matrices
-	- Also test a variant that returns a tuple of MatrixXd vs. taking 2 MatrixXd references
-      as out parameters
 
 
 

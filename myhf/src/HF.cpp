@@ -3,6 +3,7 @@
 
 #include <execution>
 #include <print>
+#include <iostream>
 
 using Eigen::MatrixXd;
 
@@ -19,6 +20,12 @@ public:
 		assert(colCount > 0);
 		values = static_cast<double*>(alloca(sizeof(double) * rowCount * colCount));
 	}
+	// delete copies/moves because we do not need to support that use case
+	StackMatrix2D(const StackMatrix2D&) = delete;
+	StackMatrix2D(StackMatrix2D&&) = delete;
+	StackMatrix2D& operator=(const StackMatrix2D&) = delete;
+	StackMatrix2D& operator=(StackMatrix2D&&) = delete;
+
 	constexpr double& operator()(unsigned int row, unsigned int col) noexcept
 	{
 		assert(row >= 0 && row < rowCount);
@@ -34,6 +41,7 @@ private:
 	double* values;
 };
 
+// Overlap Functions
 static double OverlapOfTwoPrimitiveGaussiansAlongAxis(double oneDividedByAlpha1PlusAlpha2, double alpha1, double alpha2, double position1, double position2, unsigned int angularMomentum1, unsigned int angularMomentum2) noexcept
 {
 	if (angularMomentum1 == 0 && angularMomentum2 == 0)
@@ -76,7 +84,6 @@ static double OverlapOfTwoPrimitiveGaussiansAlongAxis(double oneDividedByAlpha1P
 
 	return matrix(angularMomentum1, angularMomentum2);
 }
-
 static double OverlapOfTwoPrimitiveGaussians(double alpha1, double alpha2, const Vec3d& position1, const Vec3d& position2, const QuantumNumbers& angularMomentum1, const QuantumNumbers& angularMomentum2) noexcept
 {
 	assert(std::max(angularMomentum1.l, angularMomentum2.l) + 1 < 4);
@@ -93,7 +100,6 @@ static double OverlapOfTwoPrimitiveGaussians(double alpha1, double alpha2, const
 		std::pow(std::numbers::pi * oneDividedByAlpha1PlusAlpha2, 1.5) *
 		s_x_value * s_y_value * s_z_value;
 }
-
 static double OverlapOfTwoOrbitals(const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
 {
 	double res = 0;
@@ -108,7 +114,6 @@ static double OverlapOfTwoOrbitals(const ContractedGaussianOrbital& orbital1, co
 	}
 	return res;
 }
-
 MatrixXd OverlapMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 {
 	MatrixXd overlapMatrix;
@@ -120,14 +125,14 @@ MatrixXd OverlapMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 
 	overlapMatrix = MatrixXd::Identity(numberOfContractedGaussians, numberOfContractedGaussians);
 
-	int i = 0;
+	unsigned int i = 0;
 	for (const auto& atom1 : atoms)
 	{
 		for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
 		{
 			for (const auto& orbital1 : shell1.basisFunctions)
 			{
-				int j = 0;
+				unsigned int j = 0;
 
 				for (const auto& atom2 : atoms)
 				{
@@ -154,10 +159,7 @@ MatrixXd OverlapMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 }
 
 
-
-
-
-
+// Kinetic Functions
 static std::pair<double, double> KineticEnergyOfTwoPrimitiveGaussiansAlongAxis(double oneDividedByAlpha1PlusAlpha2, double alpha1, double alpha2, double position1, double position2, unsigned int angularMomentum1, unsigned int angularMomentum2)
 {
 	// NOTE: We do not actually need a k-matrix because the values of the k-matrix is are soley based
@@ -216,7 +218,6 @@ static std::pair<double, double> KineticEnergyOfTwoPrimitiveGaussiansAlongAxis(d
 
 	return { s(angularMomentum1, angularMomentum2), k }; 
 }
-
 static double KineticEnergyOfTwoPrimitiveGaussians(double alpha1, double alpha2, const Vec3d& position1, const Vec3d& position2, const QuantumNumbers& angularMomentum1, const QuantumNumbers& angularMomentum2) noexcept
 {
 	const double oneDividedByAlpha1PlusAlpha2 = 1 / (alpha1 + alpha2);
@@ -224,18 +225,7 @@ static double KineticEnergyOfTwoPrimitiveGaussians(double alpha1, double alpha2,
 	auto [s_y_value, k_y_value] = KineticEnergyOfTwoPrimitiveGaussiansAlongAxis(oneDividedByAlpha1PlusAlpha2, alpha1, alpha2, position1.y, position2.y, angularMomentum1.m, angularMomentum2.m);
 	auto [s_z_value, k_z_value] = KineticEnergyOfTwoPrimitiveGaussiansAlongAxis(oneDividedByAlpha1PlusAlpha2, alpha1, alpha2, position1.z, position2.z, angularMomentum1.n, angularMomentum2.n);	
 
-	Vec3d diff = position2 - position1;
-
-//	std::println("==================================================");
-//	double factor = std::exp(-1 * alpha1 * alpha2 * oneDividedByAlpha1PlusAlpha2 * diff.Dot(diff)) * std::pow(std::numbers::pi * oneDividedByAlpha1PlusAlpha2, 1.5);
-//	std::println("Factor: {0}", factor);
-//	std::println("k_x   : {0}", k_x_value);
-//	std::println("k_y   : {0}", k_y_value);
-//	std::println("k_z   : {0}", k_z_value);
-//	std::println("s_x   : {0}", s_x_value);
-//	std::println("s_y   : {0}", s_y_value);
-//	std::println("s_z   : {0}", s_z_value);
-	
+	Vec3d diff = position2 - position1;	
 	return std::exp(-1 * alpha1 * alpha2 * oneDividedByAlpha1PlusAlpha2 * diff.Dot(diff)) * 
 		   std::pow(std::numbers::pi * oneDividedByAlpha1PlusAlpha2, 1.5) *
 		   (k_x_value * s_y_value * s_z_value +
@@ -256,25 +246,119 @@ static double KineticEnergyOfTwoOrbitals(const ContractedGaussianOrbital& orbita
 	}
 	return res;
 }
+static void KineticEnergyMatrixFillDiagonal(std::span<Atom> atoms, const Basis& basis, Eigen::MatrixXd& kineticEnergyMatrix)
+{
+	// Small optimization: The kinetic matrix will very likely have repeated values along the diagonal. We only need to calculate
+	// the value for each atom/orbital type once, so just iterate down the diagonal and copy values where possible.
+	unsigned int i = 0;
+	for (size_t atomIndex1 = 0; atomIndex1 < atoms.size(); ++atomIndex1)
+	{
+		const auto& atom1 = atoms[atomIndex1];
+		const auto& shells1 = basis.GetAtom(atom1.type).shells;
+
+		for (size_t shellIndex1 = 0; shellIndex1 < shells1.size(); ++shellIndex1)
+		{
+			const auto& shell1 = shells1[shellIndex1];
+
+			for (size_t orbitalIndex1 = 0; orbitalIndex1 < shell1.basisFunctions.size(); ++orbitalIndex1)
+			{
+				const auto& orbital1 = shell1.basisFunctions[orbitalIndex1];
+				unsigned int totalAngularMomentum1 = orbital1.angularMomentum.AngularMomentum();
+
+				// If the diagonal value is 0, then it has not yet been calculated
+				if (kineticEnergyMatrix(i, i) == 0)
+				{
+					kineticEnergyMatrix(i, i) = KineticEnergyOfTwoOrbitals(orbital1, atom1.position, orbital1, atom1.position);
+
+					// Now that we have calculated the diagonal value, search forward to fill in that value whereever else we can
+
+					// NOTE: First, we must finish iterating over the shells/orbitals of the current atom. For example, going
+					//       from 2px to 2py
+					unsigned int j = i + 1;
+
+					// Start 1 passed the current orbital and iterate until you finish iterating over the entire shell
+					for (size_t orbitalIndex2 = orbitalIndex1 + 1; orbitalIndex2 < shell1.basisFunctions.size(); ++orbitalIndex2)
+					{
+						if (shell1.basisFunctions[orbitalIndex2].angularMomentum.AngularMomentum() == totalAngularMomentum1)
+							kineticEnergyMatrix(j, j) = kineticEnergyMatrix(i, i);
+
+						++j;
+					}
+
+					// Iterate over the remaining shells in the atom to advance the j value
+					for (size_t shellIndex2 = shellIndex1 + 1; shellIndex2 < shells1.size(); ++shellIndex2)
+						j += static_cast<unsigned int>(shells1[shellIndex2].basisFunctions.size());
+
+					// Now that we have completed the current atom, iterate over all remaining atoms
+					for (size_t atomIndex2 = atomIndex1 + 1; atomIndex2 < atoms.size(); ++atomIndex2)
+					{
+						const auto& atom2 = atoms[atomIndex2];
+						const auto& shells2 = basis.GetAtom(atom2.type).shells;
+
+						// Check to see if the atom types match
+						if (atom2.type == atom1.type)
+						{
+							// Atom types match, so now iterate over the shell values
+							for (size_t shellIndex2 = 0; shellIndex2 < shells2.size(); ++shellIndex2)
+							{
+								const auto& shell2 = shells2[shellIndex2];
+
+								// Check if shells match
+								if (shellIndex1 == shellIndex2)
+								{
+									// Shells index match, so iterate over the orbitals of the shell
+									for (size_t orbitalIndex2 = 0; orbitalIndex2 < shell2.basisFunctions.size(); ++orbitalIndex2)
+									{
+										if (shell2.basisFunctions[orbitalIndex2].angularMomentum.AngularMomentum() == totalAngularMomentum1)
+											kineticEnergyMatrix(j, j) = kineticEnergyMatrix(i, i);
+
+										++j;
+									}
+								}
+								else
+								{
+									// Shell index does not match, so just fast forward the j value
+									j += static_cast<unsigned int>(shell2.basisFunctions.size());
+								}
+							}
+						}
+						else
+						{
+							// atom types do not match, so just fast forward the j value
+							for (const auto& shell2 : shells2)
+								j += static_cast<unsigned int>(shell2.basisFunctions.size());
+						}
+					}
+				}
+
+				++i;
+			}
+		}
+	}
+}
 MatrixXd KineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 {
-	MatrixXd kineticMatrix;
+	MatrixXd kineticEnergyMatrix;
 
 	assert(atoms.size() > 1);
 	unsigned int numberOfContractedGaussians = 0;
 	for (const Atom& atom : atoms)
 		numberOfContractedGaussians += basis.GetAtom(atom.type).NumberOfContractedGaussians();
 
-	kineticMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
+	kineticEnergyMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
 
-	int i = 0;
+	// Special function that computes the diagonal elements in a more optimized way than if we were to do it 
+	// in the section below
+	KineticEnergyMatrixFillDiagonal(atoms, basis, kineticEnergyMatrix);
+
+	unsigned int i = 0;
 	for (const auto& atom1 : atoms)
 	{
 		for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
 		{
 			for (const auto& orbital1 : shell1.basisFunctions)
 			{
-				int j = 0;
+				unsigned int j = 0;
 
 				for (const auto& atom2 : atoms)
 				{
@@ -282,12 +366,10 @@ MatrixXd KineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 					{
 						for (const auto& orbital2 : shell2.basisFunctions)
 						{
-							if (j >= i)
+							if (j > i)
 							{
-								kineticMatrix(i, j) = KineticEnergyOfTwoOrbitals(orbital1, atom1.position, orbital2, atom2.position);
-								
-								if (j > i)
-									kineticMatrix(j, i) = kineticMatrix(i, j);
+								kineticEnergyMatrix(i, j) = KineticEnergyOfTwoOrbitals(orbital1, atom1.position, orbital2, atom2.position);								
+								kineticEnergyMatrix(j, i) = kineticEnergyMatrix(i, j);
 							}
 
 							++j;
@@ -299,10 +381,8 @@ MatrixXd KineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 		}
 	}
 
-	return kineticMatrix;
+	return kineticEnergyMatrix;
 }
-
-
 
 
 static std::pair<double, double> OverlapAndKineticEnergyOfTwoPrimitiveGaussians(double alpha1, double alpha2, const Vec3d& position1, const Vec3d& position2, const QuantumNumbers& angularMomentum1, const QuantumNumbers& angularMomentum2) noexcept
@@ -349,15 +429,19 @@ void OverlapAndKineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis, Ei
 
 	overlapMatrix = MatrixXd::Identity(numberOfContractedGaussians, numberOfContractedGaussians);
 	kineticEnergyMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
+	
+	// Special function that computes the diagonal elements in a more optimized way than if we were to do it 
+	// in the section below
+	KineticEnergyMatrixFillDiagonal(atoms, basis, kineticEnergyMatrix);
 
-	int i = 0;
+	unsigned int i = 0;
 	for (const auto& atom1 : atoms)
 	{
 		for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
 		{
 			for (const auto& orbital1 : shell1.basisFunctions)
 			{
-				int j = 0;
+				unsigned int j = 0;
 
 				for (const auto& atom2 : atoms)
 				{
@@ -365,17 +449,16 @@ void OverlapAndKineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis, Ei
 					{
 						for (const auto& orbital2 : shell2.basisFunctions)
 						{
-							if (j >= i)
+							// We have already compute the diagonal values, so we only need to compute off diagonal values
+							if (j > i)
 							{
 								auto [overlap, kinetic] = OverlapAndKineticEnergyOfTwoOrbitals(orbital1, atom1.position, orbital2, atom2.position);
+								
 								overlapMatrix(i, j) = overlap;
-								kineticEnergyMatrix(i, j) = kinetic;
+								overlapMatrix(j, i) = overlap;
 
-								if (j > i)
-								{
-									overlapMatrix(j, i) = overlapMatrix(i, j);
-									kineticEnergyMatrix(j, i) = kineticEnergyMatrix(i, j);
-								}
+								kineticEnergyMatrix(i, j) = kinetic;
+								kineticEnergyMatrix(j, i) = kinetic; 
 							}
 
 							++j;

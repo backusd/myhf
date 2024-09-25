@@ -7,4 +7,5 @@ int main()
 {
 //	OverlapMatrixTest();
 //	KineticEnergyMatrixTest();
+	OverlapAndKineticEnergyMatrixTest();
 }

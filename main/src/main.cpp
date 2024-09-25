@@ -22,8 +22,9 @@ int main()
 		std::vector<Atom> atoms =
 		{
 			{ ATOM_TYPE::Hydrogen, 1, { 0,  1.43233673, -0.96104039 } },
+			{ ATOM_TYPE::Oxygen, 8, { 1,  1.43233673, -0.96104039 } },
 			{ ATOM_TYPE::Hydrogen, 1, { 0, -1.43233673, -0.96104039 } },
-			{ ATOM_TYPE::Oxygen,   8, { 0,           0,  0.24026010 } }
+			{ ATOM_TYPE::Oxygen, 8, { -1,  1.43233673, -0.96104039 } },
 		};
 
 	//	std::vector<Atom> atoms =
@@ -32,14 +33,14 @@ int main()
 	//		{ ATOM_TYPE::Magnesium, 12, { 1.0, 0.5, 0.75 } }
 	//	};
 
-		Eigen::MatrixXd overlapMatrix = OverlapMatrix(atoms, STO_3G);
-		std::cout << "Overlap 1:\n" << std::setprecision(8) << overlapMatrix << '\n';
-
-		Eigen::MatrixXd kineticMatrix = KineticEnergyMatrix(atoms, STO_3G);
-		std::cout << "\nKinetic 1:\n" << kineticMatrix << '\n';
+	//	Eigen::MatrixXd overlapMatrix = OverlapMatrix(atoms, STO_3G);
+	//	std::cout << "Overlap 1:\n" << std::setprecision(5) << overlapMatrix << '\n';
+	//
+	//	Eigen::MatrixXd kineticMatrix = KineticEnergyMatrix(atoms, STO_3G);
+	//	std::cout << "\nKinetic 1:\n" << kineticMatrix << '\n';
 
 		Eigen::MatrixXd overlap2, kinetic2;
-		OverlapAndKineticEnergyMatrix(atoms, STO_3G, overlap2, kinetic2);
+		OverlapAndKineticEnergyMatrix2(atoms, STO_3G, overlap2, kinetic2);
 		std::cout << "\nOverlap 2:\n" << std::setprecision(8) << overlap2 << '\n';
 		std::cout << "\nKinetic 2:\n" << std::setprecision(8) << kinetic2 << '\n';
 

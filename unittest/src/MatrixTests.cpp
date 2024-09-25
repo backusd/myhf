@@ -20,6 +20,11 @@ struct MatrixExpectedDataResult
 	unsigned int numRows;
 	unsigned int numCols;
 	std::vector<double> values;
+
+	bool IsEqualNotIncludingValues(const MatrixExpectedDataResult& rhs) const noexcept
+	{
+		return atoms == rhs.atoms && positions == rhs.positions && basis == rhs.basis && numRows == rhs.numRows && numCols == rhs.numCols;
+	}
 };
 struct MatrixExpectedData
 {
@@ -299,6 +304,207 @@ int KineticEnergyMatrixTest()
 	failures += KineticEnergyMatrixTest("data/kinetic-matrix-expected-values_two-atom_sto-6g.json");
 	failures += KineticEnergyMatrixTest("data/kinetic-matrix-expected-values_three-atom_sto-3g.json");
 	failures += KineticEnergyMatrixTest("data/kinetic-matrix-expected-values_three-atom_sto-6g.json");
+
+	return failures;
+}
+
+static int OverlapAndKineticEnergyMatrixTest(const std::string& overlapFile, const std::string& kineticFile)
+{
+	MatrixExpectedData expectedOverlapData;
+	MatrixExpectedData expectedKineticData;
+	try
+	{
+		LOG_TRACE("Loading test descriptions: {0}...", overlapFile);
+		std::ifstream f(overlapFile);
+		json data = json::parse(f);
+		expectedOverlapData = data.template get<MatrixExpectedData>();
+	}
+	catch (const std::exception& e)
+	{
+		LOG_ERROR("Failed to read {0}. Caught exception with message: {1}", overlapFile, e.what());
+		return 1;
+	}
+
+	try
+	{
+		LOG_TRACE("Loading test descriptions: {0}...", kineticFile);
+		std::ifstream f(kineticFile);
+		json data = json::parse(f);
+		expectedKineticData = data.template get<MatrixExpectedData>();
+	}
+	catch (const std::exception& e)
+	{
+		LOG_ERROR("Failed to read {0}. Caught exception with message: {1}", kineticFile, e.what());
+		return 1;
+	}
+
+	Eigen::MatrixXd expectedMatrix;
+	unsigned int numSignificantDigits = 9;
+
+	const unsigned int numberOfTests = static_cast<unsigned int>(expectedOverlapData.results.size() + expectedKineticData.results.size());
+	unsigned int testNumber = 0;
+	unsigned int numFailures = 0;
+
+	// Go through the overlap tests first
+	for (const auto& result : expectedOverlapData.results)
+	{
+		if (numFailures > 0)
+			break;
+
+		++testNumber;
+
+		// Construct the overlap & kinetic matrix
+		expectedMatrix = Eigen::MatrixXd(result.numRows, result.numCols);
+		for (unsigned int row = 0; row < result.numRows; ++row)
+			for (unsigned int col = 0; col < result.numCols; ++col)
+				expectedMatrix(row, col) = result.values[static_cast<size_t>(row) * result.numCols + col];
+
+		try
+		{
+			bool failure = false;
+
+			std::vector<Atom> atoms;
+			unsigned int atomCount = static_cast<unsigned int>(result.atoms.size());
+			atoms.reserve(atomCount);
+
+			for (unsigned int iii = 0; iii < atomCount; ++iii)
+			{
+				ATOM_TYPE type = GetAtomType(result.atoms[iii]);
+				unsigned int positionIndex0 = iii * 3;
+				atoms.emplace_back(type, static_cast<unsigned int>(type), Vec3d{ result.positions[positionIndex0], result.positions[positionIndex0 + 1], result.positions[positionIndex0 + 2] });
+			}
+
+			const Basis& basis = GetBasis(result.basis);
+			Eigen::MatrixXd actualOverlapMatrix, actualKineticMatrix;
+			OverlapAndKineticEnergyMatrix(atoms, basis, actualOverlapMatrix, actualKineticMatrix);
+
+			const auto& actualMatrix = actualOverlapMatrix;
+
+			// 1. matrix shape must match
+			MATRIX_VALUE_TEST(static_cast<unsigned int>(actualOverlapMatrix.cols()) == result.numCols, "Overlap matrix column counts do not match");
+			if (failure) continue;
+
+			MATRIX_VALUE_TEST(static_cast<unsigned int>(actualOverlapMatrix.rows()) == result.numRows, "Overlap matrix row counts do not match");
+			if (failure) continue;
+
+			// 2. Each value must be within the margin for error
+			for (unsigned int row_i = 0; row_i < result.numRows; ++row_i)
+			{
+				for (unsigned int col_i = 0; col_i < result.numCols; ++col_i)
+				{
+					MATRIX_VALUE_TEST(EqualUpToNSignificantDigits(actualOverlapMatrix(row_i, col_i), expectedMatrix(row_i, col_i), numSignificantDigits), std::format("Overlap values at ({0}, {1}) do not match", row_i, col_i));
+					if (failure)
+						break;
+				}
+				if (failure) break;
+			}
+			if (failure) continue;
+			
+
+			// Report Success
+			std::string allNames;
+			for (const std::string& shortName : result.atoms)
+			{
+				allNames += shortName;
+				allNames += ' ';
+			}
+			LOG_INFO("[PASSED] Test {0} / {1}: [{2}] {3}", testNumber, numberOfTests, basis.name, allNames);			
+		}
+		catch (std::exception& ex)
+		{
+			LOG_ERROR("ERROR: Caught exception: {}", ex.what());
+		}
+	}
+
+	// Go through the kinetic tests second
+	for (const auto& result : expectedKineticData.results)
+	{
+		if (numFailures > 0)
+			break;
+
+		++testNumber;
+
+		// Construct the overlap & kinetic matrix
+		expectedMatrix = Eigen::MatrixXd(result.numRows, result.numCols);
+		for (unsigned int row = 0; row < result.numRows; ++row)
+			for (unsigned int col = 0; col < result.numCols; ++col)
+				expectedMatrix(row, col) = result.values[static_cast<size_t>(row) * result.numCols + col];
+
+		try
+		{
+			bool failure = false;
+
+			std::vector<Atom> atoms;
+			unsigned int atomCount = static_cast<unsigned int>(result.atoms.size());
+			atoms.reserve(atomCount);
+
+			for (unsigned int iii = 0; iii < atomCount; ++iii)
+			{
+				ATOM_TYPE type = GetAtomType(result.atoms[iii]);
+				unsigned int positionIndex0 = iii * 3;
+				atoms.emplace_back(type, static_cast<unsigned int>(type), Vec3d{ result.positions[positionIndex0], result.positions[positionIndex0 + 1], result.positions[positionIndex0 + 2] });
+			}
+
+			const Basis& basis = GetBasis(result.basis);
+			Eigen::MatrixXd actualOverlapMatrix, actualKineticMatrix;
+			OverlapAndKineticEnergyMatrix(atoms, basis, actualOverlapMatrix, actualKineticMatrix);
+
+			const auto& actualMatrix = actualKineticMatrix;
+
+			// 1. matrix shape must match
+			MATRIX_VALUE_TEST(static_cast<unsigned int>(actualKineticMatrix.cols()) == result.numCols, "Kinetic matrix column counts do not match");
+			if (failure) continue;
+
+			MATRIX_VALUE_TEST(static_cast<unsigned int>(actualKineticMatrix.rows()) == result.numRows, "Kinetic matrix row counts do not match");
+			if (failure) continue;
+
+			// 2. Each value must be within the margin for error
+			for (unsigned int row_i = 0; row_i < result.numRows; ++row_i)
+			{
+				for (unsigned int col_i = 0; col_i < result.numCols; ++col_i)
+				{
+					MATRIX_VALUE_TEST(EqualUpToNSignificantDigits(actualKineticMatrix(row_i, col_i), expectedMatrix(row_i, col_i), numSignificantDigits), std::format("Kinetic values at ({0}, {1}) do not match", row_i, col_i));
+					if (failure)
+						break;
+				}
+				if (failure) break;
+			}
+			if (failure) continue;
+
+
+			// Report Success
+			std::string allNames;
+			for (const std::string& shortName : result.atoms)
+			{
+				allNames += shortName;
+				allNames += ' ';
+			}
+			LOG_INFO("[PASSED] Test {0} / {1}: [{2}] {3}", testNumber, numberOfTests, basis.name, allNames);
+		}
+		catch (std::exception& ex)
+		{
+			LOG_ERROR("ERROR: Caught exception: {}", ex.what());
+		}
+	}
+
+	if (numFailures > 0)
+		LOG_WARN("SUMMARY: Passed = {0}   Failed = {1}", numberOfTests - numFailures, numFailures);
+	else
+		LOG_INFO("SUMMARY: All tests passed");
+
+	return numFailures;
+}
+
+int OverlapAndKineticEnergyMatrixTest()
+{
+	std::println("==============================================================================");
+	std::println("Overlap and Kinetic Matrix Test");
+	std::println("==============================================================================");
+
+	int failures = OverlapAndKineticEnergyMatrixTest("data/overlap-matrix-expected-values_two-atom_sto-3g.json",   "data/kinetic-matrix-expected-values_two-atom_sto-3g.json");
+	failures += OverlapAndKineticEnergyMatrixTest(   "data/overlap-matrix-expected-values_two-atom_sto-6g.json",   "data/kinetic-matrix-expected-values_two-atom_sto-6g.json");
+	failures += OverlapAndKineticEnergyMatrixTest(   "data/overlap-matrix-expected-values_three-atom_sto-3g.json", "data/kinetic-matrix-expected-values_three-atom_sto-3g.json");
+	failures += OverlapAndKineticEnergyMatrixTest(   "data/overlap-matrix-expected-values_three-atom_sto-6g.json", "data/kinetic-matrix-expected-values_three-atom_sto-6g.json");
 
 	return failures;
 }
