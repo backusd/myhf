@@ -41,6 +41,42 @@ private:
 	double* values;
 };
 
+class StackMatrix2D_Functions
+{
+public:
+	StackMatrix2D_Functions(unsigned int rows, unsigned int columns) noexcept :
+		rowCount(rows), colCount(columns) //values(nullptr)
+	{
+		assert(rowCount > 0);
+		assert(colCount > 0);
+		//values = static_cast<std::function<double(double)>*>(alloca(sizeof(std::function<double(double)>) * rowCount * colCount));
+	}
+	// delete copies/moves because we do not need to support that use case
+	StackMatrix2D_Functions(const StackMatrix2D_Functions&) = delete;
+	StackMatrix2D_Functions(StackMatrix2D_Functions&&) = delete;
+	StackMatrix2D_Functions& operator=(const StackMatrix2D_Functions&) = delete;
+	StackMatrix2D_Functions& operator=(StackMatrix2D_Functions&&) = delete;
+
+	constexpr std::function<double(double)>& operator()(unsigned int row, unsigned int col) noexcept
+	{
+		assert(row >= 0 && row < rowCount);
+		assert(col >= 0 && col < colCount);
+
+		assert(row * colCount + col < 16);
+
+		return values[row * colCount + col];
+	}
+	constexpr unsigned int RowCount() const noexcept { return rowCount; }
+	constexpr unsigned int ColumnCount() const noexcept { return colCount; }
+
+private:
+	unsigned int rowCount;
+	unsigned int colCount;
+	//std::function<double(double)>* values;
+
+	std::array<std::function<double(double)>, 16> values;
+};
+
 // Overlap Functions
 static double OverlapOfTwoPrimitiveGaussiansAlongAxis(double oneDividedByAlpha1PlusAlpha2, double alpha1, double alpha2, double position1, double position2, unsigned int angularMomentum1, unsigned int angularMomentum2) noexcept
 {
@@ -470,6 +506,236 @@ void OverlapAndKineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis, Ei
 		}
 	}
 }
+
+
+
+static double Abscissa(int n, int i) noexcept
+{
+	const double val = i * std::numbers::pi / (1. + n);
+	const double sinVal = std::sin(val);
+	const double cosVal = std::cos(val);
+	return (n + 1. - 2. * i) / (n + 1.) + 2. / std::numbers::pi * (1. + 2. / 3. * sinVal * sinVal) * cosVal * sinVal;
+}
+static double Omega(int n, int i) noexcept
+{
+	const double sinVal = std::sin(i * std::numbers::pi / (n + 1.));
+	return 16. / (3 * (1. + n)) * sinVal * sinVal * sinVal * sinVal;
+}
+static double ChebyshevIntegral(double eps, int M, const std::function<double(double)>& F) noexcept
+{
+	double c0 = std::cos(std::numbers::pi / 6.);
+	double s0 = 0.5;
+	double c1, s1, q, p, chp, c, s, x;
+
+	double err = 10.;
+
+	int n = 3;
+	c1 = s0;
+	s1 = c0;
+
+	const double res = Abscissa(2, 1);
+
+	q = (F(res) + F(-res)) * Omega(2, 1);
+	p = F(0);
+
+	chp = q + p;
+
+	int j = 0;
+
+	while (err > eps && 2. * n * (1. - j) + j * 4. * n / 3. - 1. <= M)
+	{
+		j = 1 - j;
+
+		c1 = j * c1 + (1. - j) * c0;
+		s1 = j * s1 + (1. - j) * s0;
+		c0 = j * c0 + (1. - j) * std::sqrt((1. + c0) / 2.);
+		s0 = j * s0 + (1. - j) * s0 / (c0 + c0);
+
+		c = c0;
+		s = s0;
+
+		for (int i = 1; i < n; i += 2)
+		{
+			x = 1. + 2. / (3. * std::numbers::pi) * s * c * (3. + 2. * s * s) - ((double)i) / n;
+
+			const int div = (int)((i + 2. * j) / 3.);
+			if (3 * div >= i + j)
+				chp += (F(-x) + F(x)) * s * s * s * s;
+
+			x = s;
+			s = s * c1 + c * s1;
+			c = c * c1 - x * s1;
+		}
+
+		n *= 1 + j;
+		p += (1. - j) * (chp - q);
+
+		err = 16. * std::abs((1. - j) * (q - 3. * p / 2.) + j * (chp - q - q)) / (3. * n);
+		q = (1. - j) * q + j * chp;
+	}
+
+	chp = 16. * q / (3. * n);
+
+	return chp;
+}
+double NuclearElectronAttractionOfTwoPrimitiveGaussians(double alpha1, double alpha2, const Vec3d& position1, const Vec3d& position2, const Vec3d& nuclearCenter, const QuantumNumbers& angularMomentum1, const QuantumNumbers& angularMomentum2) noexcept
+{
+	double oneDividedByAlpha1PlusAlpha2 = 1 / (alpha1 + alpha2);
+
+	StackMatrix2D_Functions eta_x(angularMomentum1.l + angularMomentum2.l + 1, angularMomentum2.l + 1);
+	StackMatrix2D_Functions eta_y(angularMomentum1.m + angularMomentum2.m + 1, angularMomentum2.m + 1);
+	StackMatrix2D_Functions eta_z(angularMomentum1.n + angularMomentum2.n + 1, angularMomentum2.n + 1);
+
+	eta_x(0, 0) = [](double) -> double { return 1.0; };
+	eta_y(0, 0) = [](double) -> double { return 1.0; };
+	eta_z(0, 0) = [](double) -> double { return 1.0; };
+
+	// eta_x
+	if (eta_x.RowCount() > 1)
+	{
+		double p = alpha1 * position1.x + alpha2 * position2.x;
+		double pTimesOneDividedByAlpha1PlusAlpha2 = p * oneDividedByAlpha1PlusAlpha2;
+
+		// Initial conditions
+		eta_x(1, 0) = 
+			[a = -1 * (position1.x - pTimesOneDividedByAlpha1PlusAlpha2), 
+			 b = -1 * (pTimesOneDividedByAlpha1PlusAlpha2 - nuclearCenter.x)](double t) -> double
+			{
+				return a + b * t * t;
+			};
+
+		// Recurrence Index
+		for (unsigned int row = 2; row < eta_x.RowCount(); ++row)
+		{
+			eta_x(row, 0) =
+				[&eta_x, row, oneDividedByAlpha1PlusAlpha2,
+				a = -1 * (position1.x - pTimesOneDividedByAlpha1PlusAlpha2),
+				b = -1 * (pTimesOneDividedByAlpha1PlusAlpha2 - nuclearCenter.x),
+				c = (row - 1) * 0.5 * oneDividedByAlpha1PlusAlpha2](double t) -> double
+				{
+					return a + b * t * t * eta_x(row - 1, 0)(t) + c * (1 - t * t) * eta_x(row - 2, 0)(t);
+				};
+		}
+
+		// Transfer Equation
+		//     The recurrence relation requires filling out each column before moving on to the next one.
+		//     Therefore, the outer loop must be the loop over the columns
+		for (unsigned int col = 1; col < eta_x.ColumnCount(); ++col)
+		{
+			for (unsigned int row = 0; row + col <= angularMomentum1.l + angularMomentum2.l; ++row)
+			{
+				eta_x(row, col) = [&eta_x, row, col, a = position1.x - position2.x](double t) -> double
+					{
+						return eta_x(row + 1, col - 1)(t) + a * eta_x(row, col - 1)(t);
+					};
+			}
+		}
+	}
+
+	// eta_y
+	if (eta_y.RowCount() > 1)
+	{
+		double p = alpha1 * position1.y + alpha2 * position2.y;
+		double pTimesOneDividedByAlpha1PlusAlpha2 = p * oneDividedByAlpha1PlusAlpha2; 
+
+		// Initial conditions
+		eta_y(1, 0) = 
+			[a = -1 * (position1.y - pTimesOneDividedByAlpha1PlusAlpha2), 
+			 b = -1 * (pTimesOneDividedByAlpha1PlusAlpha2 - nuclearCenter.y)](double t) -> double
+			{
+				return a + b * t * t;
+			};
+
+		// Recurrence Index
+		for (unsigned int row = 2; row < eta_y.RowCount(); ++row)
+		{
+			eta_y(row, 0) =
+				[&eta_y, row, oneDividedByAlpha1PlusAlpha2,
+				a = -1 * (position1.y - pTimesOneDividedByAlpha1PlusAlpha2),
+				b = -1 * (pTimesOneDividedByAlpha1PlusAlpha2 - nuclearCenter.y),
+				c = (row - 1) * 0.5 * oneDividedByAlpha1PlusAlpha2](double t) -> double
+				{
+					return a + b * t * t * eta_y(row - 1, 0)(t) + c * (1 - t * t) * eta_y(row - 2, 0)(t);
+				};
+		}
+
+		// Transfer Equation
+		//     The recurrence relation requires filling out each column before moving on to the next one.
+		//     Therefore, the outer loop must be the loop over the columns
+		for (unsigned int col = 1; col < eta_y.ColumnCount(); ++col)
+		{
+			for (unsigned int row = 0; row + col <= angularMomentum1.m + angularMomentum2.m; ++row)
+			{
+				eta_y(row, col) = [&eta_y, row, col, a = position1.y - position2.y](double t) -> double
+					{
+						return eta_y(row + 1, col - 1)(t) + a * eta_y(row, col - 1)(t);
+					};
+			}
+		}
+	}
+
+	// eta_z
+	if (eta_z.RowCount() > 1)
+	{
+		double p = alpha1 * position1.z + alpha2 * position2.z;
+		double pTimesOneDividedByAlpha1PlusAlpha2 = p * oneDividedByAlpha1PlusAlpha2;
+
+		// Initial conditions
+		eta_z(1, 0) = 
+			[a = -1 * (position1.z - pTimesOneDividedByAlpha1PlusAlpha2), 
+			 b = -1 * (pTimesOneDividedByAlpha1PlusAlpha2 - nuclearCenter.z)](double t) -> double
+			{
+				return a + b * t * t;
+			};
+
+		// Recurrence Index
+		for (unsigned int row = 2; row < eta_z.RowCount(); ++row)
+		{
+			eta_z(row, 0) =
+				[&eta_z, row, oneDividedByAlpha1PlusAlpha2,
+				a = -1 * (position1.z - pTimesOneDividedByAlpha1PlusAlpha2),
+				b = -1 * (pTimesOneDividedByAlpha1PlusAlpha2 - nuclearCenter.z),
+				c = (row - 1) * 0.5 * oneDividedByAlpha1PlusAlpha2](double t) -> double
+				{
+					return a + b * t * t * eta_z(row - 1, 0)(t) + c * (1 - t * t) * eta_z(row - 2, 0)(t);
+				};
+		}
+
+		// Transfer Equation
+		//     The recurrence relation requires filling out each column before moving on to the next one.
+		//     Therefore, the outer loop must be the loop over the columns
+		for (unsigned int col = 1; col < eta_z.ColumnCount(); ++col)
+		{
+			for (unsigned int row = 0; row + col <= angularMomentum1.n + angularMomentum2.n; ++row)
+			{
+				eta_z(row, col) = [&eta_z, row, col, a = position1.z - position2.z](double t) -> double
+					{
+						return eta_z(row + 1, col - 1)(t) + a * eta_z(row, col - 1)(t);
+					};
+			}
+		}
+	}
+
+
+	Vec3d diff = position2 - position1; 
+	double factor = std::exp(-1 * alpha1 * alpha2 * oneDividedByAlpha1PlusAlpha2 * diff.Dot(diff)) * 2 * std::numbers::pi * oneDividedByAlpha1PlusAlpha2;
+
+	Vec3d v = (oneDividedByAlpha1PlusAlpha2 * (alpha1 * position1 + alpha2 * position2)) - nuclearCenter;
+	auto func = [&eta_x, &eta_y, &eta_z,
+				 &angularMomentum1, &angularMomentum2,
+				 a = alpha1 + alpha2,
+	             b = v.Dot(v)](double t) -> double
+		{
+			t = (t + 1) / 2; 
+			return 0.5 * std::exp(-1 * a * t * t * b) *
+				eta_x(angularMomentum1.l, angularMomentum2.l)(t) *
+				eta_y(angularMomentum1.m, angularMomentum2.m)(t) *
+				eta_z(angularMomentum1.n, angularMomentum2.n)(t);			
+		};
+
+	return factor * ChebyshevIntegral(1E-10, 50000, func);
+}
+
 
 
 }

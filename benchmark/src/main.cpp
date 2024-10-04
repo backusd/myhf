@@ -241,7 +241,7 @@ static void Overlap_and_Kinetic_CH4_STO6G(benchmark::State& state)
 		OverlapAndKineticEnergyMatrix(atoms, STO_6G, overlap, kinetic);
 }
 
-
+/*
 static void Overlap_and_Kinetic_HH_STO3G_A(benchmark::State& state)
 {
 	std::vector<Atom> atoms
@@ -322,6 +322,7 @@ static void Overlap_and_Kinetic_CH4_STO3G_B(benchmark::State& state)
 	for (auto _ : state)
 		OverlapAndKineticEnergyMatrix2(atoms, STO_3G, overlap, kinetic);
 }
+*/
 
 //BENCHMARK(Overlap_and_Kinetic_HH_STO3G_A);
 //BENCHMARK(Overlap_and_Kinetic_HH_STO3G_B);
@@ -332,34 +333,34 @@ static void Overlap_and_Kinetic_CH4_STO3G_B(benchmark::State& state)
 
 
 // Overlap - STO_3G
-//BENCHMARK(Overlap_HH_STO3G);
-//BENCHMARK(Overlap_H2O_STO3G);
-//BENCHMARK(Overlap_CH4_STO3G);
+BENCHMARK(Overlap_HH_STO3G);
+BENCHMARK(Overlap_H2O_STO3G);
+BENCHMARK(Overlap_CH4_STO3G);
 
 // Overlap - STO_6G
-//BENCHMARK(Overlap_HH_STO6G);
-//BENCHMARK(Overlap_H2O_STO6G);
-//BENCHMARK(Overlap_CH4_STO6G);
+BENCHMARK(Overlap_HH_STO6G);
+BENCHMARK(Overlap_H2O_STO6G);
+BENCHMARK(Overlap_CH4_STO6G);
 
 // Kinetic - STO_3G
-//BENCHMARK(Kinetic_HH_STO3G);
-//BENCHMARK(Kinetic_H2O_STO3G);
-//BENCHMARK(Kinetic_CH4_STO3G);
+BENCHMARK(Kinetic_HH_STO3G);
+BENCHMARK(Kinetic_H2O_STO3G);
+BENCHMARK(Kinetic_CH4_STO3G);
 
 // Kinetic - STO_6G
-//BENCHMARK(Kinetic_HH_STO6G);
-//BENCHMARK(Kinetic_H2O_STO6G);
-//BENCHMARK(Kinetic_CH4_STO6G);
+BENCHMARK(Kinetic_HH_STO6G);
+BENCHMARK(Kinetic_H2O_STO6G);
+BENCHMARK(Kinetic_CH4_STO6G);
 
 // Overlap & Kinetic - STO_3G
-//BENCHMARK(Overlap_and_Kinetic_HH_STO3G);
-//BENCHMARK(Overlap_and_Kinetic_H2O_STO3G);
-//BENCHMARK(Overlap_and_Kinetic_CH4_STO3G);
+BENCHMARK(Overlap_and_Kinetic_HH_STO3G);
+BENCHMARK(Overlap_and_Kinetic_H2O_STO3G);
+BENCHMARK(Overlap_and_Kinetic_CH4_STO3G);
 
 // Overlap & Kinetic - STO_6G
-//BENCHMARK(Overlap_and_Kinetic_HH_STO6G);
-//BENCHMARK(Overlap_and_Kinetic_H2O_STO6G);
-//BENCHMARK(Overlap_and_Kinetic_CH4_STO6G);
+BENCHMARK(Overlap_and_Kinetic_HH_STO6G);
+BENCHMARK(Overlap_and_Kinetic_H2O_STO6G);
+BENCHMARK(Overlap_and_Kinetic_CH4_STO6G);
 
 
 BENCHMARK_MAIN();
