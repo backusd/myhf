@@ -1,18 +1,15 @@
-* Can you create a template class for StackMatrix?
-	- how to default initialize a type T? Can std::function be default initialized?
-* Can you separate all of the eta_x/y/z code into its own function?
-* Try to figure out what is actually going on
-	- Instead of doing recursive calls to the different eta_* functions, can
-	  you instead just build up the polynomial coefficient values instead?
+* Benchmark the current version of Nuclear Matrix computation
+* Write a parallel implementation of the overlap matrix calculation
+	- Regardless of whether its faster or slower, do the same thing for
+      the other 2 matrix calculations
+* Unit test the current version of the Nuclear matrix computation
+	- How much does changing epsilon change the final result?
+	- How much does changing epsilon change the computation speed?
+* Adding profiling to profile the Nuclear matrix computation
+	- Can it be sped up further?
+	- Profile it in a single thread implementation first
 * Implement the faster version that is in the C++ Hartree Fock program
 	- Is it actually faster?
-* What happens if we change the epsilon from 1e-10 to 1e-15?
-	- How much slower does it get?
-
-
-* Parallelize all matrix calculations
-	- Transform the workload into something that can be passed to a std:: 
-	  parallel algorithm
 
 
 

@@ -158,7 +158,6 @@ static void Kinetic_CH4_STO6G(benchmark::State& state)
 		Eigen::MatrixXd overlap = KineticEnergyMatrix(atoms, STO_6G);
 }
 
-
 // Overlap AND Kinetic Matrix --------------------------------------------------------------------------
 static void Overlap_and_Kinetic_HH_STO3G(benchmark::State& state)
 {
@@ -241,8 +240,8 @@ static void Overlap_and_Kinetic_CH4_STO6G(benchmark::State& state)
 		OverlapAndKineticEnergyMatrix(atoms, STO_6G, overlap, kinetic);
 }
 
-/*
-static void Overlap_and_Kinetic_HH_STO3G_A(benchmark::State& state)
+// Nuclear Electron Attraction Matrix --------------------------------------------------------------------------
+static void NuclearElectronAttraction_HH_STO3G(benchmark::State& state)
 {
 	std::vector<Atom> atoms
 	{
@@ -250,11 +249,10 @@ static void Overlap_and_Kinetic_HH_STO3G_A(benchmark::State& state)
 		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
 	};
 
-	Eigen::MatrixXd overlap, kinetic;
 	for (auto _ : state)
-		OverlapAndKineticEnergyMatrix(atoms, STO_3G, overlap, kinetic);
+		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_3G);
 }
-static void Overlap_and_Kinetic_HH_STO3G_B(benchmark::State& state)
+static void NuclearElectronAttraction_HH_STO6G(benchmark::State& state)
 {
 	std::vector<Atom> atoms
 	{
@@ -262,11 +260,10 @@ static void Overlap_and_Kinetic_HH_STO3G_B(benchmark::State& state)
 		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
 	};
 
-	Eigen::MatrixXd overlap, kinetic;
 	for (auto _ : state)
-		OverlapAndKineticEnergyMatrix2(atoms, STO_3G, overlap, kinetic);
+		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_6G);
 }
-static void Overlap_and_Kinetic_H2O_STO3G_A(benchmark::State& state)
+static void NuclearElectronAttraction_H2O_STO3G(benchmark::State& state)
 {
 	std::vector<Atom> atoms
 	{
@@ -275,11 +272,10 @@ static void Overlap_and_Kinetic_H2O_STO3G_A(benchmark::State& state)
 		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
 	};
 
-	Eigen::MatrixXd overlap, kinetic;
 	for (auto _ : state)
-		OverlapAndKineticEnergyMatrix(atoms, STO_3G, overlap, kinetic);
+		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_3G);
 }
-static void Overlap_and_Kinetic_H2O_STO3G_B(benchmark::State& state)
+static void NuclearElectronAttraction_H2O_STO6G(benchmark::State& state)
 {
 	std::vector<Atom> atoms
 	{
@@ -288,11 +284,10 @@ static void Overlap_and_Kinetic_H2O_STO3G_B(benchmark::State& state)
 		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
 	};
 
-	Eigen::MatrixXd overlap, kinetic;
 	for (auto _ : state)
-		OverlapAndKineticEnergyMatrix2(atoms, STO_3G, overlap, kinetic);
+		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_6G);
 }
-static void Overlap_and_Kinetic_CH4_STO3G_A(benchmark::State& state)
+static void NuclearElectronAttraction_CH4_STO3G(benchmark::State& state)
 {
 	std::vector<Atom> atoms
 	{
@@ -303,11 +298,10 @@ static void Overlap_and_Kinetic_CH4_STO3G_A(benchmark::State& state)
 		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
 	};
 
-	Eigen::MatrixXd overlap, kinetic;
 	for (auto _ : state)
-		OverlapAndKineticEnergyMatrix(atoms, STO_3G, overlap, kinetic);
+		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_3G);
 }
-static void Overlap_and_Kinetic_CH4_STO3G_B(benchmark::State& state)
+static void NuclearElectronAttraction_CH4_STO6G(benchmark::State& state)
 {
 	std::vector<Atom> atoms
 	{
@@ -318,49 +312,58 @@ static void Overlap_and_Kinetic_CH4_STO3G_B(benchmark::State& state)
 		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
 	};
 
-	Eigen::MatrixXd overlap, kinetic;
 	for (auto _ : state)
-		OverlapAndKineticEnergyMatrix2(atoms, STO_3G, overlap, kinetic);
+		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_6G);
 }
-*/
-
-//BENCHMARK(Overlap_and_Kinetic_HH_STO3G_A);
-//BENCHMARK(Overlap_and_Kinetic_HH_STO3G_B);
-//BENCHMARK(Overlap_and_Kinetic_H2O_STO3G_A);
-//BENCHMARK(Overlap_and_Kinetic_H2O_STO3G_B);
-//BENCHMARK(Overlap_and_Kinetic_CH4_STO3G_A);
-//BENCHMARK(Overlap_and_Kinetic_CH4_STO3G_B);
 
 
-// Overlap - STO_3G
-BENCHMARK(Overlap_HH_STO3G);
-BENCHMARK(Overlap_H2O_STO3G);
-BENCHMARK(Overlap_CH4_STO3G);
 
-// Overlap - STO_6G
-BENCHMARK(Overlap_HH_STO6G);
-BENCHMARK(Overlap_H2O_STO6G);
-BENCHMARK(Overlap_CH4_STO6G);
 
-// Kinetic - STO_3G
-BENCHMARK(Kinetic_HH_STO3G);
-BENCHMARK(Kinetic_H2O_STO3G);
-BENCHMARK(Kinetic_CH4_STO3G);
 
-// Kinetic - STO_6G
-BENCHMARK(Kinetic_HH_STO6G);
-BENCHMARK(Kinetic_H2O_STO6G);
-BENCHMARK(Kinetic_CH4_STO6G);
 
-// Overlap & Kinetic - STO_3G
-BENCHMARK(Overlap_and_Kinetic_HH_STO3G);
-BENCHMARK(Overlap_and_Kinetic_H2O_STO3G);
-BENCHMARK(Overlap_and_Kinetic_CH4_STO3G);
 
-// Overlap & Kinetic - STO_6G
-BENCHMARK(Overlap_and_Kinetic_HH_STO6G);
-BENCHMARK(Overlap_and_Kinetic_H2O_STO6G);
-BENCHMARK(Overlap_and_Kinetic_CH4_STO6G);
+
+
+
+//// Overlap - STO_3G
+//BENCHMARK(Overlap_HH_STO3G);
+//BENCHMARK(Overlap_H2O_STO3G);
+//BENCHMARK(Overlap_CH4_STO3G);
+//
+//// Overlap - STO_6G
+//BENCHMARK(Overlap_HH_STO6G);
+//BENCHMARK(Overlap_H2O_STO6G);
+//BENCHMARK(Overlap_CH4_STO6G);
+//
+//// Kinetic - STO_3G
+//BENCHMARK(Kinetic_HH_STO3G);
+//BENCHMARK(Kinetic_H2O_STO3G);
+//BENCHMARK(Kinetic_CH4_STO3G);
+//
+//// Kinetic - STO_6G
+//BENCHMARK(Kinetic_HH_STO6G);
+//BENCHMARK(Kinetic_H2O_STO6G);
+//BENCHMARK(Kinetic_CH4_STO6G);
+//
+//// Overlap & Kinetic - STO_3G
+//BENCHMARK(Overlap_and_Kinetic_HH_STO3G);
+//BENCHMARK(Overlap_and_Kinetic_H2O_STO3G);
+//BENCHMARK(Overlap_and_Kinetic_CH4_STO3G);
+//
+//// Overlap & Kinetic - STO_6G
+//BENCHMARK(Overlap_and_Kinetic_HH_STO6G);
+//BENCHMARK(Overlap_and_Kinetic_H2O_STO6G);
+//BENCHMARK(Overlap_and_Kinetic_CH4_STO6G);
+//
+//// Nuclear Electron Attraction - STO_3G
+//BENCHMARK(NuclearElectronAttraction_HH_STO3G);
+//BENCHMARK(NuclearElectronAttraction_H2O_STO3G);
+//BENCHMARK(NuclearElectronAttraction_CH4_STO3G);
+//
+//// Nuclear Electron Attraction - STO_6G
+//BENCHMARK(NuclearElectronAttraction_HH_STO6G);
+//BENCHMARK(NuclearElectronAttraction_H2O_STO6G);
+//BENCHMARK(NuclearElectronAttraction_CH4_STO6G);
 
 
 BENCHMARK_MAIN();

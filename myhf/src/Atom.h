@@ -39,6 +39,8 @@ struct Atom
 	ATOM_TYPE	 type = ATOM_TYPE::Hydrogen;
 	unsigned int numberOfElectrons = 1;
 	Vec3d		 position{};
+
+	[[nodiscard]] constexpr unsigned int Z() const noexcept { return static_cast<unsigned int>(type); }
 };
 
 }

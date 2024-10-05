@@ -4,6 +4,7 @@
 #include <execution>
 #include <print>
 #include <iostream>
+#include <thread>
 
 using Eigen::MatrixXd;
 
@@ -45,11 +46,12 @@ class StackMatrix2D_Functions
 {
 public:
 	StackMatrix2D_Functions(unsigned int rows, unsigned int columns) noexcept :
-		rowCount(rows), colCount(columns) //values(nullptr)
+		rowCount(rows), 
+		colCount(columns)
 	{
 		assert(rowCount > 0);
 		assert(colCount > 0);
-		//values = static_cast<std::function<double(double)>*>(alloca(sizeof(std::function<double(double)>) * rowCount * colCount));
+		assert(rowCount * colCount <= 16);
 	}
 	// delete copies/moves because we do not need to support that use case
 	StackMatrix2D_Functions(const StackMatrix2D_Functions&) = delete;
@@ -61,9 +63,7 @@ public:
 	{
 		assert(row >= 0 && row < rowCount);
 		assert(col >= 0 && col < colCount);
-
 		assert(row * colCount + col < 16);
-
 		return values[row * colCount + col];
 	}
 	constexpr unsigned int RowCount() const noexcept { return rowCount; }
@@ -72,8 +72,6 @@ public:
 private:
 	unsigned int rowCount;
 	unsigned int colCount;
-	//std::function<double(double)>* values;
-
 	std::array<std::function<double(double)>, 16> values;
 };
 
@@ -161,6 +159,18 @@ MatrixXd OverlapMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 
 	overlapMatrix = MatrixXd::Identity(numberOfContractedGaussians, numberOfContractedGaussians);
 
+	struct ComputeItem
+	{
+		unsigned int index_i;
+		unsigned int index_j;
+		const ContractedGaussianOrbital& orbital_1;
+		const ContractedGaussianOrbital& orbital_2;
+		const Vec3d& position_1;
+		const Vec3d& position_2;
+	};
+	std::vector<ComputeItem> computeItems;
+	computeItems.reserve(numberOfContractedGaussians * numberOfContractedGaussians); // Note, we are over reserving here, but thats fine to waste the extra memory
+
 	unsigned int i = 0;
 	for (const auto& atom1 : atoms)
 	{
@@ -178,8 +188,7 @@ MatrixXd OverlapMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 						{
 							if (j > i)
 							{
-								overlapMatrix(i, j) = OverlapOfTwoOrbitals(orbital1, atom1.position, orbital2, atom2.position);
-								overlapMatrix(j, i) = overlapMatrix(i, j);
+								computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
 							}
 
 							++j;
@@ -191,9 +200,16 @@ MatrixXd OverlapMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 		}
 	}
 
+	std::for_each(std::execution::par_unseq, computeItems.begin(), computeItems.end(),
+		[&overlapMatrix](const ComputeItem& item)
+		{
+			double result = OverlapOfTwoOrbitals(item.orbital_1, item.position_1, item.orbital_2, item.position_2);
+			overlapMatrix(item.index_i, item.index_j) = result;
+			overlapMatrix(item.index_j, item.index_i) = result;
+		});
+
 	return overlapMatrix;
 }
-
 
 // Kinetic Functions
 static std::pair<double, double> KineticEnergyOfTwoPrimitiveGaussiansAlongAxis(double oneDividedByAlpha1PlusAlpha2, double alpha1, double alpha2, double position1, double position2, unsigned int angularMomentum1, unsigned int angularMomentum2)
@@ -387,6 +403,18 @@ MatrixXd KineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 	// in the section below
 	KineticEnergyMatrixFillDiagonal(atoms, basis, kineticEnergyMatrix);
 
+	struct ComputeItem
+	{
+		unsigned int index_i;
+		unsigned int index_j;
+		const ContractedGaussianOrbital& orbital_1;
+		const ContractedGaussianOrbital& orbital_2;
+		const Vec3d& position_1;
+		const Vec3d& position_2;
+	};
+	std::vector<ComputeItem> computeItems;
+	computeItems.reserve(numberOfContractedGaussians * numberOfContractedGaussians); // Note, we are over reserving here, but thats fine to waste the extra memory
+
 	unsigned int i = 0;
 	for (const auto& atom1 : atoms)
 	{
@@ -404,8 +432,7 @@ MatrixXd KineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 						{
 							if (j > i)
 							{
-								kineticEnergyMatrix(i, j) = KineticEnergyOfTwoOrbitals(orbital1, atom1.position, orbital2, atom2.position);								
-								kineticEnergyMatrix(j, i) = kineticEnergyMatrix(i, j);
+								computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
 							}
 
 							++j;
@@ -417,10 +444,18 @@ MatrixXd KineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 		}
 	}
 
+	std::for_each(std::execution::par_unseq, computeItems.begin(), computeItems.end(),
+		[&kineticEnergyMatrix](const ComputeItem& item)
+		{
+			double result = KineticEnergyOfTwoOrbitals(item.orbital_1, item.position_1, item.orbital_2, item.position_2);
+			kineticEnergyMatrix(item.index_i, item.index_j) = result;
+			kineticEnergyMatrix(item.index_j, item.index_i) = result;
+		});
+
 	return kineticEnergyMatrix;
 }
 
-
+// Overlap & Kinetic Functions
 static std::pair<double, double> OverlapAndKineticEnergyOfTwoPrimitiveGaussians(double alpha1, double alpha2, const Vec3d& position1, const Vec3d& position2, const QuantumNumbers& angularMomentum1, const QuantumNumbers& angularMomentum2) noexcept
 {
 	const double oneDividedByAlpha1PlusAlpha2 = 1 / (alpha1 + alpha2);
@@ -465,10 +500,22 @@ void OverlapAndKineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis, Ei
 
 	overlapMatrix = MatrixXd::Identity(numberOfContractedGaussians, numberOfContractedGaussians);
 	kineticEnergyMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
-	
+
 	// Special function that computes the diagonal elements in a more optimized way than if we were to do it 
 	// in the section below
 	KineticEnergyMatrixFillDiagonal(atoms, basis, kineticEnergyMatrix);
+
+	struct ComputeItem
+	{
+		unsigned int index_i;
+		unsigned int index_j;
+		const ContractedGaussianOrbital& orbital_1;
+		const ContractedGaussianOrbital& orbital_2;
+		const Vec3d& position_1;
+		const Vec3d& position_2;
+	};
+	std::vector<ComputeItem> computeItems;
+	computeItems.reserve(numberOfContractedGaussians * numberOfContractedGaussians); // Note, we are over reserving here, but thats fine to waste the extra memory
 
 	unsigned int i = 0;
 	for (const auto& atom1 : atoms)
@@ -488,13 +535,7 @@ void OverlapAndKineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis, Ei
 							// We have already compute the diagonal values, so we only need to compute off diagonal values
 							if (j > i)
 							{
-								auto [overlap, kinetic] = OverlapAndKineticEnergyOfTwoOrbitals(orbital1, atom1.position, orbital2, atom2.position);
-								
-								overlapMatrix(i, j) = overlap;
-								overlapMatrix(j, i) = overlap;
-
-								kineticEnergyMatrix(i, j) = kinetic;
-								kineticEnergyMatrix(j, i) = kinetic; 
+								computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
 							}
 
 							++j;
@@ -505,10 +546,21 @@ void OverlapAndKineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis, Ei
 			}
 		}
 	}
+
+	std::for_each(std::execution::par_unseq, computeItems.begin(), computeItems.end(), 
+		[&overlapMatrix, &kineticEnergyMatrix](const ComputeItem& item) 
+		{
+			auto [overlap, kinetic] = OverlapAndKineticEnergyOfTwoOrbitals(item.orbital_1, item.position_1, item.orbital_2, item.position_2);
+
+			overlapMatrix(item.index_i, item.index_j) = overlap;
+			overlapMatrix(item.index_j, item.index_i) = overlap;
+
+			kineticEnergyMatrix(item.index_i, item.index_j) = kinetic;
+			kineticEnergyMatrix(item.index_j, item.index_i) = kinetic;
+		});
 }
 
-
-
+// Nuclear-Electron Attraction Functions
 static double Abscissa(int n, int i) noexcept
 {
 	const double val = i * std::numbers::pi / (1. + n);
@@ -578,10 +630,13 @@ static double ChebyshevIntegral(double eps, int M, const std::function<double(do
 
 	return chp;
 }
-double NuclearElectronAttractionOfTwoPrimitiveGaussians(double alpha1, double alpha2, const Vec3d& position1, const Vec3d& position2, const Vec3d& nuclearCenter, const QuantumNumbers& angularMomentum1, const QuantumNumbers& angularMomentum2) noexcept
+static double NuclearElectronAttractionOfTwoPrimitiveGaussians(double alpha1, double alpha2, const Vec3d& position1, const Vec3d& position2, const Vec3d& nuclearCenter, const QuantumNumbers& angularMomentum1, const QuantumNumbers& angularMomentum2) noexcept
 {
 	double oneDividedByAlpha1PlusAlpha2 = 1 / (alpha1 + alpha2);
 
+	// NOTE: Because the functions within the each matrix capture a reference to the matrix itself, we cannot easily
+	//       separate this into a separate function, otherwise we would have to worry about dangling references. For 
+	//       simplicity, we create each matrix on the stack here, and that guarantees the lifetime of each function we create
 	StackMatrix2D_Functions eta_x(angularMomentum1.l + angularMomentum2.l + 1, angularMomentum2.l + 1);
 	StackMatrix2D_Functions eta_y(angularMomentum1.m + angularMomentum2.m + 1, angularMomentum2.m + 1);
 	StackMatrix2D_Functions eta_z(angularMomentum1.n + angularMomentum2.n + 1, angularMomentum2.n + 1);
@@ -734,6 +789,84 @@ double NuclearElectronAttractionOfTwoPrimitiveGaussians(double alpha1, double al
 		};
 
 	return factor * ChebyshevIntegral(1E-10, 50000, func);
+}
+static double NuclearElectronAttractionEnergyOfTwoOrbitals(const Vec3d& nuclearCenter, const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
+{
+	double res = 0;
+
+	for (auto& gaussian1 : orbital1.gaussianOrbitals)
+	{
+		for (auto& gaussian2 : orbital2.gaussianOrbitals)
+		{
+			double nuclear = NuclearElectronAttractionOfTwoPrimitiveGaussians(gaussian1.alpha, gaussian2.alpha, position1, position2, nuclearCenter, orbital1.angularMomentum, orbital2.angularMomentum);
+			res += gaussian1.normalizationFactor * gaussian2.normalizationFactor * gaussian1.coefficient * gaussian2.coefficient * nuclear;
+		}
+	}
+	return res;
+}
+MatrixXd NuclearElectronAttractionEnergyMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
+{
+	MatrixXd nuclearMatrix;
+
+	assert(atoms.size() > 1);
+	unsigned int numberOfContractedGaussians = 0;
+	for (const Atom& atom : atoms)
+		numberOfContractedGaussians += basis.GetAtom(atom.type).NumberOfContractedGaussians();
+
+	nuclearMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
+
+	struct ComputeItem
+	{
+		unsigned int index_i;
+		unsigned int index_j;
+		const ContractedGaussianOrbital& orbital_1;
+		const ContractedGaussianOrbital& orbital_2;
+		const Vec3d& position_1;
+		const Vec3d& position_2;
+	};
+	std::vector<ComputeItem> computeItems;
+	computeItems.reserve(numberOfContractedGaussians * numberOfContractedGaussians); // Note, we are over reserving here, but thats fine to waste the extra memory
+
+	unsigned int i = 0;
+	for (const auto& atom1 : atoms)
+	{
+		for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
+		{
+			for (const auto& orbital1 : shell1.basisFunctions)
+			{
+				unsigned int j = 0;
+
+				for (const auto& atom2 : atoms)
+				{
+					for (const auto& shell2 : basis.GetAtom(atom2.type).shells)
+					{
+						for (const auto& orbital2 : shell2.basisFunctions)
+						{							
+							if (j >= i)
+							{
+								computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
+							}
+
+							++j;
+						}
+					}
+				}
+				++i;
+			}
+		}
+	}
+
+	std::for_each(std::execution::par_unseq, computeItems.begin(), computeItems.end(), 
+		[&nuclearMatrix, &atoms](const ComputeItem& item)
+		{
+			for (const auto& nuclearCenterAtom : atoms)
+				nuclearMatrix(item.index_i, item.index_j) -= nuclearCenterAtom.Z() * NuclearElectronAttractionEnergyOfTwoOrbitals(nuclearCenterAtom.position, item.orbital_1, item.position_1, item.orbital_2, item.position_2);
+
+			if (item.index_i != item.index_j)
+				nuclearMatrix(item.index_j, item.index_i) = nuclearMatrix(item.index_i, item.index_j);
+		});
+
+	return nuclearMatrix;
 }
 
 

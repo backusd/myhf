@@ -55,7 +55,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>BENCHMARK_STATIC_DEFINE;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>BENCHMARK_STATIC_DEFINE;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)myhf;$(SolutionDir)vendor\eigen\;$(SolutionDir)vendor\gcem\include\;C:\Program Files %28x86%29\benchmark\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
