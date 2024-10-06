@@ -8,6 +8,7 @@
 #include "src/Molecule.h"
 #include "src/Orbital.h"
 #include "src/PrintHelpers.h"
+#include "src/Profiling.h"
 #include "src/QuantumNumbers.h"
 #include "src/Shell.h"
 #include "src/Vec.h"

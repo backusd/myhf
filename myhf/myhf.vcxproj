@@ -55,7 +55,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PROFILING_ENABLED;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -77,7 +77,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PROFILING_ENABLED;_SILENCE_ALL_CXX23_DEPRECATION_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -109,6 +109,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\PrintHelpers.cpp" />
+    <ClCompile Include="src\Profiling.cpp" />
     <ClCompile Include="src\QuantumNumbers.cpp" />
     <ClCompile Include="src\Shell.cpp" />
   </ItemGroup>
@@ -124,6 +125,7 @@
     <ClInclude Include="src\Orbital.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\PrintHelpers.h" />
+    <ClInclude Include="src\Profiling.h" />
     <ClInclude Include="src\QuantumNumbers.h" />
     <ClInclude Include="src\Shell.h" />
     <ClInclude Include="src\Vec.h" />

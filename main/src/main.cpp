@@ -45,15 +45,22 @@ int main()
 
 	//	Eigen::MatrixXd overlapMatrix = OverlapMatrix(atoms, STO_3G);
 	//	std::cout << "Overlap 1:\n" << std::setprecision(5) << overlapMatrix << '\n';
+	//
+	//	Eigen::MatrixXd overlapMatrix2 = OverlapMatrix_2(atoms, STO_3G);
+	//	std::cout << "Overlap 2:\n" << std::setprecision(5) << overlapMatrix2 << '\n';
 
 	//	Eigen::MatrixXd kineticMatrix = KineticEnergyMatrix(atoms, STO_3G);
 	//	std::cout << "\nKinetic 1:\n" << kineticMatrix << '\n';
 
+		PROFILE_BEGIN_SESSION("Session 1", "results.json");
 		std::println("Started...");
 		Eigen::MatrixXd nuclearMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_3G);
 		std::cout << "\nNuclear:\n" << nuclearMatrix << '\n';
+		PROFILE_END_SESSION();
 
-
+	//
+	//	Eigen::MatrixXd nuclearMatrix2 = NuclearElectronAttractionEnergyMatrix_Par(atoms, STO_3G);
+	//	std::cout << "\nNuclear Par:\n" << nuclearMatrix2 << '\n';
 
 	}
 

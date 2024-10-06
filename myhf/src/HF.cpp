@@ -1,10 +1,12 @@
 #include "pch.h"
 #include "HF.h"
+#include "Profiling.h"
 
 #include <execution>
 #include <print>
 #include <iostream>
 #include <thread>
+#include <ranges>
 
 using Eigen::MatrixXd;
 
@@ -118,6 +120,51 @@ static double OverlapOfTwoPrimitiveGaussiansAlongAxis(double oneDividedByAlpha1P
 
 	return matrix(angularMomentum1, angularMomentum2);
 }
+static double OverlapOfTwoPrimitiveGaussiansAlongAxis_2(double oneDividedByAlpha1PlusAlpha2, double alpha1, double alpha2, double position1, double position2, unsigned int angularMomentum1, unsigned int angularMomentum2) noexcept
+{
+	if (angularMomentum1 == 0 && angularMomentum2 == 0)
+		return 1.0;
+
+	unsigned int angularMomentumSum = angularMomentum1 + angularMomentum2;
+
+	// Supposed we need to return the value 'matrix[a, b]'. To compute that value, you must
+	// have already computed 'matrix[a+1, b-1]' - this is the value located down 1 and left 1 spot
+	// in the matrix. If you continuing this logic, you will eventually get to the first column of the
+	// matrix, which will tell us how many rows we need. Notice that along that diagonal in the matrix, 
+	// the row index plus the column index have a constant value (a + b). To adjust for the off-by-one 
+	// error, we also add one.
+	StackMatrix2D matrix(angularMomentumSum + 1, angularMomentum2 + 1);
+
+	// Initial conditions
+	matrix(0, 0) = 1.0;
+	double startingValue = -(position1 - ((alpha1 * position1 + alpha2 * position2) * oneDividedByAlpha1PlusAlpha2));
+	matrix(1, 0) = startingValue;
+
+	// Recurrence Index
+	for (unsigned int iii = 2; iii < matrix.RowCount(); ++iii)
+		matrix(iii, 0) = startingValue * matrix(iii - 1, 0) + ((iii - 1) * 0.5 * oneDividedByAlpha1PlusAlpha2) * matrix(iii - 2, 0);
+
+	// Transfer Equation
+	//
+	// The recurrence relation requires filling out each column before moving on to the next one.
+	// Therefore, the outer loop must be the loop over the columns
+	double positionDelta = position1 - position2;
+	for (unsigned int col = 1; col < matrix.ColumnCount(); ++col)
+	{
+		// The conditional here is a little weird. Basically, we have set up a matrix to store the recurrence values in. 
+		// However, the bottom right half of values will never get used (and cannot be calculated without expanding the matrix). 
+		// For example, consider trying to compute matrix[0, 2]. The matrix will look something like this:
+		//		v1	v4	v6
+		//		v2	v5	-
+		//		v3	-	-
+		// We only need to compute up to v6 and don't need the '-' values and we wouldn't even be able to compute them unless we added more rows.
+
+		for (unsigned int row = 0; row + col <= angularMomentumSum; ++row)
+			matrix(row, col) = matrix(row + 1, col - 1) + positionDelta * matrix(row, col - 1);
+	}
+
+	return matrix(angularMomentum1, angularMomentum2);
+}
 static double OverlapOfTwoPrimitiveGaussians(double alpha1, double alpha2, const Vec3d& position1, const Vec3d& position2, const QuantumNumbers& angularMomentum1, const QuantumNumbers& angularMomentum2) noexcept
 {
 	assert(std::max(angularMomentum1.l, angularMomentum2.l) + 1 < 4);
@@ -134,6 +181,22 @@ static double OverlapOfTwoPrimitiveGaussians(double alpha1, double alpha2, const
 		std::pow(std::numbers::pi * oneDividedByAlpha1PlusAlpha2, 1.5) *
 		s_x_value * s_y_value * s_z_value;
 }
+static double OverlapOfTwoPrimitiveGaussians_2(double alpha1, double alpha2, const Vec3d& position1, const Vec3d& position2, const QuantumNumbers& angularMomentum1, const QuantumNumbers& angularMomentum2) noexcept
+{
+	assert(std::max(angularMomentum1.l, angularMomentum2.l) + 1 < 4);
+	assert(std::max(angularMomentum1.m, angularMomentum2.m) + 1 < 4);
+	assert(std::max(angularMomentum1.n, angularMomentum2.n) + 1 < 4);
+
+	const double oneDividedByAlpha1PlusAlpha2 = 1 / (alpha1 + alpha2);
+	double s_x_value = OverlapOfTwoPrimitiveGaussiansAlongAxis_2(oneDividedByAlpha1PlusAlpha2, alpha1, alpha2, position1.x, position2.x, angularMomentum1.l, angularMomentum2.l);
+	double s_y_value = OverlapOfTwoPrimitiveGaussiansAlongAxis_2(oneDividedByAlpha1PlusAlpha2, alpha1, alpha2, position1.y, position2.y, angularMomentum1.m, angularMomentum2.m);
+	double s_z_value = OverlapOfTwoPrimitiveGaussiansAlongAxis_2(oneDividedByAlpha1PlusAlpha2, alpha1, alpha2, position1.z, position2.z, angularMomentum1.n, angularMomentum2.n);
+
+	Vec3d diff = position2 - position1;
+	return std::exp(-1 * alpha1 * alpha2 * oneDividedByAlpha1PlusAlpha2 * diff.Dot(diff)) *
+		std::pow(std::numbers::pi * oneDividedByAlpha1PlusAlpha2, 1.5) *
+		s_x_value * s_y_value * s_z_value;
+}
 static double OverlapOfTwoOrbitals(const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
 {
 	double res = 0;
@@ -143,6 +206,20 @@ static double OverlapOfTwoOrbitals(const ContractedGaussianOrbital& orbital1, co
 		for (auto& gaussian2 : orbital2.gaussianOrbitals)
 		{
 			double overlap = OverlapOfTwoPrimitiveGaussians(gaussian1.alpha, gaussian2.alpha, position1, position2, orbital1.angularMomentum, orbital2.angularMomentum);
+			res += gaussian1.normalizationFactor * gaussian2.normalizationFactor * gaussian1.coefficient * gaussian2.coefficient * overlap;
+		}
+	}
+	return res;
+}
+static double OverlapOfTwoOrbitals_2(const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
+{
+	double res = 0;
+
+	for (auto& gaussian1 : orbital1.gaussianOrbitals)
+	{
+		for (auto& gaussian2 : orbital2.gaussianOrbitals)
+		{
+			double overlap = OverlapOfTwoPrimitiveGaussians_2(gaussian1.alpha, gaussian2.alpha, position1, position2, orbital1.angularMomentum, orbital2.angularMomentum);
 			res += gaussian1.normalizationFactor * gaussian2.normalizationFactor * gaussian1.coefficient * gaussian2.coefficient * overlap;
 		}
 	}
@@ -204,6 +281,68 @@ MatrixXd OverlapMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 		[&overlapMatrix](const ComputeItem& item)
 		{
 			double result = OverlapOfTwoOrbitals(item.orbital_1, item.position_1, item.orbital_2, item.position_2);
+			overlapMatrix(item.index_i, item.index_j) = result;
+			overlapMatrix(item.index_j, item.index_i) = result;
+		});
+
+	return overlapMatrix;
+}
+MatrixXd OverlapMatrix_2(std::span<Atom> atoms, const Basis& basis) noexcept
+{
+	MatrixXd overlapMatrix;
+
+	assert(atoms.size() > 1);
+	unsigned int numberOfContractedGaussians = 0;
+	for (const Atom& atom : atoms)
+		numberOfContractedGaussians += basis.GetAtom(atom.type).NumberOfContractedGaussians();
+
+	overlapMatrix = MatrixXd::Identity(numberOfContractedGaussians, numberOfContractedGaussians);
+
+	struct ComputeItem
+	{
+		unsigned int index_i;
+		unsigned int index_j;
+		const ContractedGaussianOrbital& orbital_1;
+		const ContractedGaussianOrbital& orbital_2;
+		const Vec3d& position_1;
+		const Vec3d& position_2;
+	};
+	std::vector<ComputeItem> computeItems;
+	computeItems.reserve(numberOfContractedGaussians * numberOfContractedGaussians); // Note, we are over reserving here, but thats fine to waste the extra memory
+
+	unsigned int i = 0;
+	for (const auto& atom1 : atoms)
+	{
+		for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
+		{
+			for (const auto& orbital1 : shell1.basisFunctions)
+			{
+				unsigned int j = 0;
+
+				for (const auto& atom2 : atoms)
+				{
+					for (const auto& shell2 : basis.GetAtom(atom2.type).shells)
+					{
+						for (const auto& orbital2 : shell2.basisFunctions)
+						{
+							if (j > i)
+							{
+								computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
+							}
+
+							++j;
+						}
+					}
+				}
+				++i;
+			}
+		}
+	}
+
+	std::for_each(std::execution::par_unseq, computeItems.begin(), computeItems.end(),
+		[&overlapMatrix](const ComputeItem& item)
+		{
+			double result = OverlapOfTwoOrbitals_2(item.orbital_1, item.position_1, item.orbital_2, item.position_2);
 			overlapMatrix(item.index_i, item.index_j) = result;
 			overlapMatrix(item.index_j, item.index_i) = result;
 		});
@@ -575,6 +714,8 @@ static double Omega(int n, int i) noexcept
 }
 static double ChebyshevIntegral(double eps, int M, const std::function<double(double)>& F) noexcept
 {
+	PROFILE_SCOPE("ChebyshevIntegral");
+
 	double c0 = std::cos(std::numbers::pi / 6.);
 	double s0 = 0.5;
 	double c1, s1, q, p, chp, c, s, x;
@@ -798,6 +939,7 @@ static double NuclearElectronAttractionEnergyOfTwoOrbitals(const Vec3d& nuclearC
 	{
 		for (auto& gaussian2 : orbital2.gaussianOrbitals)
 		{
+			PROFILE_SCOPE("Working on 2 primitives");
 			double nuclear = NuclearElectronAttractionOfTwoPrimitiveGaussians(gaussian1.alpha, gaussian2.alpha, position1, position2, nuclearCenter, orbital1.angularMomentum, orbital2.angularMomentum);
 			res += gaussian1.normalizationFactor * gaussian2.normalizationFactor * gaussian1.coefficient * gaussian2.coefficient * nuclear;
 		}
@@ -805,6 +947,84 @@ static double NuclearElectronAttractionEnergyOfTwoOrbitals(const Vec3d& nuclearC
 	return res;
 }
 MatrixXd NuclearElectronAttractionEnergyMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
+{
+	MatrixXd nuclearMatrix;
+
+	PROFILE_SCOPE("NuclearElectronAttractionEnergyMatrix");
+
+	assert(atoms.size() > 1);
+	unsigned int numberOfContractedGaussians = 0;
+	for (const Atom& atom : atoms)
+		numberOfContractedGaussians += basis.GetAtom(atom.type).NumberOfContractedGaussians();
+
+	nuclearMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
+
+	struct ComputeItem
+	{
+		unsigned int index_i;
+		unsigned int index_j;
+		const ContractedGaussianOrbital& orbital_1;
+		const ContractedGaussianOrbital& orbital_2;
+		const Vec3d& position_1;
+		const Vec3d& position_2;
+	};
+	std::vector<ComputeItem> computeItems;
+	computeItems.reserve(numberOfContractedGaussians * numberOfContractedGaussians); // Note, we are over reserving here, but thats fine to waste the extra memory
+
+	{
+		PROFILE_SCOPE("Make compute items");
+
+		unsigned int i = 0;
+		for (const auto& atom1 : atoms)
+		{
+			for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
+			{
+				for (const auto& orbital1 : shell1.basisFunctions)
+				{
+					unsigned int j = 0;
+
+					for (const auto& atom2 : atoms)
+					{
+						for (const auto& shell2 : basis.GetAtom(atom2.type).shells)
+						{
+							for (const auto& orbital2 : shell2.basisFunctions)
+							{
+								if (j >= i)
+								{
+									computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
+								}
+
+								++j;
+							}
+						}
+					}
+					++i;
+				}
+			}
+		}
+	}
+//	std::for_each(std::execution::par_unseq, computeItems.begin(), computeItems.end(),
+
+	std::for_each(computeItems.begin(), computeItems.end(), 
+		[&nuclearMatrix, &atoms](const ComputeItem& item)
+		{
+			PROFILE_SCOPE("Compute Item");
+
+			for (const auto& nuclearCenterAtom : atoms)
+			{
+				PROFILE_SCOPE("Iterating on atom");
+				nuclearMatrix(item.index_i, item.index_j) -= nuclearCenterAtom.Z() * NuclearElectronAttractionEnergyOfTwoOrbitals(nuclearCenterAtom.position, item.orbital_1, item.position_1, item.orbital_2, item.position_2);
+			}
+			if (item.index_i != item.index_j)
+				nuclearMatrix(item.index_j, item.index_i) = nuclearMatrix(item.index_i, item.index_j);
+		});
+
+	return nuclearMatrix;
+}
+
+
+
+MatrixXd NuclearElectronAttractionEnergyMatrix_Par(std::span<Atom> atoms, const Basis& basis) noexcept
 {
 	MatrixXd nuclearMatrix;
 
@@ -841,7 +1061,7 @@ MatrixXd NuclearElectronAttractionEnergyMatrix(std::span<Atom> atoms, const Basi
 					for (const auto& shell2 : basis.GetAtom(atom2.type).shells)
 					{
 						for (const auto& orbital2 : shell2.basisFunctions)
-						{							
+						{
 							if (j >= i)
 							{
 								computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
@@ -856,11 +1076,18 @@ MatrixXd NuclearElectronAttractionEnergyMatrix(std::span<Atom> atoms, const Basi
 		}
 	}
 
-	std::for_each(std::execution::par_unseq, computeItems.begin(), computeItems.end(), 
+	std::for_each(std::execution::par_unseq, computeItems.begin(), computeItems.end(),
 		[&nuclearMatrix, &atoms](const ComputeItem& item)
 		{
-			for (const auto& nuclearCenterAtom : atoms)
-				nuclearMatrix(item.index_i, item.index_j) -= nuclearCenterAtom.Z() * NuclearElectronAttractionEnergyOfTwoOrbitals(nuclearCenterAtom.position, item.orbital_1, item.position_1, item.orbital_2, item.position_2);
+			std::atomic<double> result = 0.0;
+
+			std::for_each(std::execution::par_unseq, atoms.begin(), atoms.end(),
+				[&result, &item](const Atom& nuclearCenterAtom)
+				{
+					result -= nuclearCenterAtom.Z() * NuclearElectronAttractionEnergyOfTwoOrbitals(nuclearCenterAtom.position, item.orbital_1, item.position_1, item.orbital_2, item.position_2);
+				});
+
+			nuclearMatrix(item.index_i, item.index_j) = result.load();
 
 			if (item.index_i != item.index_j)
 				nuclearMatrix(item.index_j, item.index_i) = nuclearMatrix(item.index_i, item.index_j);
@@ -868,7 +1095,5 @@ MatrixXd NuclearElectronAttractionEnergyMatrix(std::span<Atom> atoms, const Basi
 
 	return nuclearMatrix;
 }
-
-
 
 }
