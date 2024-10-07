@@ -5,17 +5,6 @@
 
 using namespace myhf;
 
-struct scope_time
-{
-	scope_time() : start(std::chrono::system_clock::now()) {}
-	~scope_time()
-	{
-		std::println("Total Time: {}", std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now() - start));
-	}
-
-	std::chrono::system_clock::time_point start{};
-};
-
 int main()
 {
 	{
@@ -37,6 +26,12 @@ int main()
 			{ ATOM_TYPE::Oxygen, 8, { 0.0, 0.0, 0.24026010 } },
 		};
 
+		Eigen::MatrixXd overlapMatrix = OverlapMatrix(atoms, STO_3G);
+		std::cout << "Overlap 1:\n" << std::setprecision(5) << overlapMatrix << '\n';
+
+		auto mat = test::OverlapMatrix(atoms);
+		std::cout << "Overlap 2:\n" << std::setprecision(5) << mat << '\n';
+
 	//	std::vector<Atom> atoms =
 	//	{
 	//		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
@@ -52,11 +47,11 @@ int main()
 	//	Eigen::MatrixXd kineticMatrix = KineticEnergyMatrix(atoms, STO_3G);
 	//	std::cout << "\nKinetic 1:\n" << kineticMatrix << '\n';
 
-		PROFILE_BEGIN_SESSION("Session 1", "results.json");
-		std::println("Started...");
-		Eigen::MatrixXd nuclearMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_3G);
-		std::cout << "\nNuclear:\n" << nuclearMatrix << '\n';
-		PROFILE_END_SESSION();
+	//	PROFILE_BEGIN_SESSION("Session 1", "results.json");
+	//	std::println("Started...");
+	//	Eigen::MatrixXd nuclearMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_3G);
+	//	std::cout << "\nNuclear:\n" << nuclearMatrix << '\n';
+	//	PROFILE_END_SESSION();
 
 	//
 	//	Eigen::MatrixXd nuclearMatrix2 = NuclearElectronAttractionEnergyMatrix_Par(atoms, STO_3G);
