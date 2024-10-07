@@ -21,9 +21,10 @@ int main()
 
 		std::vector<Atom> atoms =
 		{
+			{ ATOM_TYPE::Oxygen, 8, { 0.3, 0.6, -0.24026010 } },
 			{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
 			{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-			{ ATOM_TYPE::Oxygen, 8, { 0.0, 0.0, 0.24026010 } },
+			{ ATOM_TYPE::Oxygen, 8, { -0.5, 0.75, 0.24026010 } },
 		};
 
 		Eigen::MatrixXd overlapMatrix = OverlapMatrix(atoms, STO_3G);
