@@ -1,3 +1,12 @@
+* For all the cases where we omit the computation and just say that 
+  the value is equal to (or -1 *) the other computed value, prove that
+  this is the case, and not something that can switch sign if the positions 
+  differ
+
+
+
+
+
 * Benchmark the current version of Nuclear Matrix computation
 * Write a parallel implementation of the overlap matrix calculation
 	- Regardless of whether its faster or slower, do the same thing for

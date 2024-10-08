@@ -19,13 +19,27 @@ int main()
 //		int iii = 0;
 
 
+		// Water
+		//std::vector<Atom> atoms =
+		//{
+		//	{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
+		//	{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
+		//	{ ATOM_TYPE::Oxygen, 8, { 0.0, 0.0, 0.24026010 } },
+		//};
+
 		std::vector<Atom> atoms =
 		{
-			{ ATOM_TYPE::Oxygen, 8, { 0.3, 0.6, -0.24026010 } },
-			{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-			{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-			{ ATOM_TYPE::Oxygen, 8, { -0.5, 0.75, 0.24026010 } },
+			{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.5, 0.24026010 } },
+			{ ATOM_TYPE::Nitrogen, 7, { 0.2, -0.1, -0.24026010 } },
 		};
+
+		//std::vector<Atom> atoms =
+		//{
+		//	{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
+		//	{ ATOM_TYPE::Helium, 2, { 0.0, -1.43233673, -0.96104039 } },
+		//	{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.24026010 } },
+		//	{ ATOM_TYPE::Helium, 2, { 1.0, -1.43233673, -0.96104039 } },
+		//};
 
 		Eigen::MatrixXd overlapMatrix = OverlapMatrix(atoms, STO_3G);
 		std::cout << "Overlap 1:\n" << std::setprecision(5) << overlapMatrix << '\n';

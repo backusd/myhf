@@ -61,6 +61,50 @@ struct Hydrogen
 		0.1688554040E+00, 0.4446345422E+00,
 		{0, 0, 0});
 };
+struct Helium
+{
+	static constexpr unsigned int NumberOfContractedGaussians = 1;
+	static constexpr ContractedGaussian orbital_1s = ContractedGaussian(
+		0.6362421394E+01, 0.1543289673E+00,
+		0.1158922999E+01, 0.5353281423E+00,
+		0.3136497915E+00, 0.4446345422E+00,
+		{ 0, 0, 0 });
+};
+
+struct Nitrogen
+{
+	static constexpr unsigned int NumberOfContractedGaussians = 5;
+
+	static constexpr ContractedGaussian orbital_1s = ContractedGaussian(
+		0.9910616896E+02, 0.1543289673E+00,
+		0.1805231239E+02, 0.5353281423E+00,
+		0.4885660238E+01, 0.4446345422E+00,
+		{ 0, 0, 0 });
+
+	static constexpr ContractedGaussian orbital_2s = ContractedGaussian(
+		0.3780455879E+01, -0.9996722919E-01,
+		0.8784966449E+00,  0.3995128261E+00,
+		0.2857143744E+00,  0.7001154689E+00,
+		{ 0, 0, 0 });
+
+	static constexpr ContractedGaussian orbital_2px = ContractedGaussian(
+		0.3780455879E+01, 0.1559162750E+00,
+		0.8784966449E+00, 0.6076837186E+00,
+		0.2857143744E+00, 0.3919573931E+00,
+		{ 1, 0, 0 });
+
+	static constexpr ContractedGaussian orbital_2py = ContractedGaussian(
+		0.3780455879E+01, 0.1559162750E+00,
+		0.8784966449E+00, 0.6076837186E+00,
+		0.2857143744E+00, 0.3919573931E+00,
+		{ 0, 1, 0 });
+
+	static constexpr ContractedGaussian orbital_2pz = ContractedGaussian(
+		0.3780455879E+01, 0.1559162750E+00,
+		0.8784966449E+00, 0.6076837186E+00,
+		0.2857143744E+00, 0.3919573931E+00,
+		{ 0, 0, 1 });
+};
 
 struct Oxygen
 {
