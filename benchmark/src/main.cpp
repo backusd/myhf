@@ -468,25 +468,67 @@ static void Overlap_CH4_STO6G_2(benchmark::State& state)
 		Eigen::MatrixXd overlap = OverlapMatrix_2(atoms, STO_6G);
 }
 
+
+static void Overlap_HH_STO3G_TEST(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = test::OverlapMatrix(atoms);
+}
+static void Overlap_H2O_STO3G_TEST(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = test::OverlapMatrix(atoms);
+}
+static void Overlap_H2O2_STO3G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = OverlapMatrix(atoms, STO_3G);
+}
+static void Overlap_H2O2_STO3G_TEST(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = test::OverlapMatrix(atoms);
+}
+
 // Overlap - STO_3G
 BENCHMARK(Overlap_HH_STO3G);
-BENCHMARK(Overlap_HH_STO3G_2);
+BENCHMARK(Overlap_HH_STO3G_TEST);
 
 BENCHMARK(Overlap_H2O_STO3G);
-BENCHMARK(Overlap_H2O_STO3G_2);
+BENCHMARK(Overlap_H2O_STO3G_TEST);
 
-BENCHMARK(Overlap_CH4_STO3G);
-BENCHMARK(Overlap_CH4_STO3G_2);
+BENCHMARK(Overlap_H2O2_STO3G);
+BENCHMARK(Overlap_H2O2_STO3G_TEST);
 
-// Overlap - STO_6G
-BENCHMARK(Overlap_HH_STO6G);
-BENCHMARK(Overlap_HH_STO6G_2);
-
-BENCHMARK(Overlap_H2O_STO6G);
-BENCHMARK(Overlap_H2O_STO6G_2);
-
-BENCHMARK(Overlap_CH4_STO6G);
-BENCHMARK(Overlap_CH4_STO6G_2);
 
 
 

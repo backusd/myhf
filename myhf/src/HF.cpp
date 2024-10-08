@@ -276,8 +276,8 @@ MatrixXd OverlapMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 			}
 		}
 	}
-
-	std::for_each(std::execution::par_unseq, computeItems.begin(), computeItems.end(),
+//	std::for_each(std::execution::par_unseq, computeItems.begin(), computeItems.end(),
+	std::for_each(computeItems.begin(), computeItems.end(),
 		[&overlapMatrix](const ComputeItem& item)
 		{
 			double result = OverlapOfTwoOrbitals(item.orbital_1, item.position_1, item.orbital_2, item.position_2);
