@@ -183,12 +183,15 @@ void OverlapAtomAtomImpl<Oxygen, Hydrogen>(const Vec3d& position1, const Vec3d& 
 template<>
 void OverlapAtomAtomImpl<Oxygen, Oxygen>(const Vec3d& position1, const Vec3d& position2, unsigned int row, unsigned int col, MatrixXd& overlapMatrix) noexcept
 {
-	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_1s2px = GenerateOneDividedByAlpha1PlusAlpha2_1s2px<Oxygen, Oxygen>();
-	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_1s2py = GenerateOneDividedByAlpha1PlusAlpha2_1s2py<Oxygen, Oxygen>();
-	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_1s2pz = GenerateOneDividedByAlpha1PlusAlpha2_1s2pz<Oxygen, Oxygen>();
-	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_2s2px = GenerateOneDividedByAlpha1PlusAlpha2_2s2px<Oxygen, Oxygen>();
-	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_2s2py = GenerateOneDividedByAlpha1PlusAlpha2_2s2py<Oxygen, Oxygen>();
-	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_2s2pz = GenerateOneDividedByAlpha1PlusAlpha2_2s2pz<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_1s2px  = GenerateOneDividedByAlpha1PlusAlpha2_1s2px<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_1s2py  = GenerateOneDividedByAlpha1PlusAlpha2_1s2py<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_1s2pz  = GenerateOneDividedByAlpha1PlusAlpha2_1s2pz<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_2s2px  = GenerateOneDividedByAlpha1PlusAlpha2_2s2px<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_2s2py  = GenerateOneDividedByAlpha1PlusAlpha2_2s2py<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_2s2pz  = GenerateOneDividedByAlpha1PlusAlpha2_2s2pz<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_2px2px = GenerateOneDividedByAlpha1PlusAlpha2_2px2px<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_2py2py = GenerateOneDividedByAlpha1PlusAlpha2_2py2py<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> oneDividedByAlpha1PlusAlpha2_2pz2pz = GenerateOneDividedByAlpha1PlusAlpha2_2pz2pz<Oxygen, Oxygen>();
 
 	static constexpr std::array<double, 9> factors_1s1s     = GenerateOverlapFactors_1s1s<Oxygen, Oxygen>();
 	static constexpr std::array<double, 9> factors_1s2s     = GenerateOverlapFactors_1s2s<Oxygen, Oxygen>();
@@ -199,16 +202,22 @@ void OverlapAtomAtomImpl<Oxygen, Oxygen>(const Vec3d& position1, const Vec3d& po
 	static constexpr std::array<double, 9> factors_2s2px    = GenerateOverlapFactors_2s2px<Oxygen, Oxygen>();
 	static constexpr std::array<double, 9> factors_2s2py    = GenerateOverlapFactors_2s2py<Oxygen, Oxygen>();
 	static constexpr std::array<double, 9> factors_2s2pz    = GenerateOverlapFactors_2s2pz<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> factors_2px2px   = GenerateOverlapFactors_2px2px<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> factors_2py2py   = GenerateOverlapFactors_2py2py<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> factors_2pz2pz   = GenerateOverlapFactors_2pz2pz<Oxygen, Oxygen>();
 
-	static constexpr std::array<double, 9> expFactors_1s1s  = GenerateOverlapExponentialFactors_1s1s<Oxygen, Oxygen>();
-	static constexpr std::array<double, 9> expFactors_1s2s  = GenerateOverlapExponentialFactors_1s2s<Oxygen, Oxygen>();
-	static constexpr std::array<double, 9> expFactors_1s2px = GenerateOverlapExponentialFactors_1s2px<Oxygen, Oxygen>();
-	static constexpr std::array<double, 9> expFactors_1s2py = GenerateOverlapExponentialFactors_1s2py<Oxygen, Oxygen>();
-	static constexpr std::array<double, 9> expFactors_1s2pz = GenerateOverlapExponentialFactors_1s2pz<Oxygen, Oxygen>();
-	static constexpr std::array<double, 9> expFactors_2s2s  = GenerateOverlapExponentialFactors_2s2s<Oxygen, Oxygen>();
-	static constexpr std::array<double, 9> expFactors_2s2px = GenerateOverlapExponentialFactors_2s2px<Oxygen, Oxygen>();
-	static constexpr std::array<double, 9> expFactors_2s2py = GenerateOverlapExponentialFactors_2s2py<Oxygen, Oxygen>();
-	static constexpr std::array<double, 9> expFactors_2s2pz = GenerateOverlapExponentialFactors_2s2pz<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> expFactors_1s1s   = GenerateOverlapExponentialFactors_1s1s<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> expFactors_1s2s   = GenerateOverlapExponentialFactors_1s2s<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> expFactors_1s2px  = GenerateOverlapExponentialFactors_1s2px<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> expFactors_1s2py  = GenerateOverlapExponentialFactors_1s2py<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> expFactors_1s2pz  = GenerateOverlapExponentialFactors_1s2pz<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> expFactors_2s2s   = GenerateOverlapExponentialFactors_2s2s<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> expFactors_2s2px  = GenerateOverlapExponentialFactors_2s2px<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> expFactors_2s2py  = GenerateOverlapExponentialFactors_2s2py<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> expFactors_2s2pz  = GenerateOverlapExponentialFactors_2s2pz<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> expFactors_2px2px = GenerateOverlapExponentialFactors_2px2px<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> expFactors_2py2py = GenerateOverlapExponentialFactors_2py2py<Oxygen, Oxygen>();
+	static constexpr std::array<double, 9> expFactors_2pz2pz = GenerateOverlapExponentialFactors_2pz2pz<Oxygen, Oxygen>();
 
 	Vec3d diff = position2 - position1;
 	double dotProduct = diff.Dot(diff);
@@ -363,6 +372,117 @@ void OverlapAtomAtomImpl<Oxygen, Oxygen>(const Vec3d& position1, const Vec3d& po
 	}
 	overlapMatrix(row + 1, col + 4) = result;
 	overlapMatrix(row + 4, col + 1) = -1 * result; // O_2pz - O_2s is just the negative of O_2s - O_2pz
+
+	// O_2px - O_2px  ==============================================================
+	{
+		const auto& atom1Prims = Oxygen::orbital_2px.primitiveGaussians;
+		const auto& atom2Prims = Oxygen::orbital_2px.primitiveGaussians;
+		result = 0.0;
+
+		double positionDelta = position1.x - position2.x;
+
+		double s_x_1_0 = -1 * (position1.x - ((position1.x * atom1Prims[0].alpha + position2.x * atom2Prims[0].alpha) * oneDividedByAlpha1PlusAlpha2_2px2px[0]));
+		result += factors_2px2px[0] * std::exp(expFactors_2px2px[0] * dotProduct) * (s_x_1_0 * s_x_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2px2px[0] + positionDelta * s_x_1_0);
+		
+		s_x_1_0 = -1 * (position1.x - ((position1.x * atom1Prims[0].alpha + position2.x * atom2Prims[1].alpha) * oneDividedByAlpha1PlusAlpha2_2px2px[1]));
+		result += factors_2px2px[1] * std::exp(expFactors_2px2px[1] * dotProduct) * (s_x_1_0 * s_x_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2px2px[1] + positionDelta * s_x_1_0);
+
+		s_x_1_0 = -1 * (position1.x - ((position1.x * atom1Prims[0].alpha + position2.x * atom2Prims[2].alpha) * oneDividedByAlpha1PlusAlpha2_2px2px[2]));
+		result += factors_2px2px[2] * std::exp(expFactors_2px2px[2] * dotProduct) * (s_x_1_0 * s_x_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2px2px[2] + positionDelta * s_x_1_0);
+
+		s_x_1_0 = -1 * (position1.x - ((position1.x * atom1Prims[1].alpha + position2.x * atom2Prims[0].alpha) * oneDividedByAlpha1PlusAlpha2_2px2px[3]));
+		result += factors_2px2px[3] * std::exp(expFactors_2px2px[3] * dotProduct) * (s_x_1_0 * s_x_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2px2px[3] + positionDelta * s_x_1_0);
+
+		s_x_1_0 = -1 * (position1.x - ((position1.x * atom1Prims[1].alpha + position2.x * atom2Prims[1].alpha) * oneDividedByAlpha1PlusAlpha2_2px2px[4]));
+		result += factors_2px2px[4] * std::exp(expFactors_2px2px[4] * dotProduct) * (s_x_1_0 * s_x_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2px2px[4] + positionDelta * s_x_1_0);
+
+		s_x_1_0 = -1 * (position1.x - ((position1.x * atom1Prims[1].alpha + position2.x * atom2Prims[2].alpha) * oneDividedByAlpha1PlusAlpha2_2px2px[5]));
+		result += factors_2px2px[5] * std::exp(expFactors_2px2px[5] * dotProduct) * (s_x_1_0 * s_x_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2px2px[5] + positionDelta * s_x_1_0);
+
+		s_x_1_0 = -1 * (position1.x - ((position1.x * atom1Prims[2].alpha + position2.x * atom2Prims[0].alpha) * oneDividedByAlpha1PlusAlpha2_2px2px[6]));
+		result += factors_2px2px[6] * std::exp(expFactors_2px2px[6] * dotProduct) * (s_x_1_0 * s_x_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2px2px[6] + positionDelta * s_x_1_0);
+
+		s_x_1_0 = -1 * (position1.x - ((position1.x * atom1Prims[2].alpha + position2.x * atom2Prims[1].alpha) * oneDividedByAlpha1PlusAlpha2_2px2px[7]));
+		result += factors_2px2px[7] * std::exp(expFactors_2px2px[7] * dotProduct) * (s_x_1_0 * s_x_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2px2px[7] + positionDelta * s_x_1_0);
+
+		s_x_1_0 = -1 * (position1.x - ((position1.x * atom1Prims[2].alpha + position2.x * atom2Prims[2].alpha) * oneDividedByAlpha1PlusAlpha2_2px2px[8]));
+		result += factors_2px2px[8] * std::exp(expFactors_2px2px[8] * dotProduct) * (s_x_1_0 * s_x_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2px2px[8] + positionDelta * s_x_1_0);
+	}
+	overlapMatrix(row + 2, col + 2) = result;
+
+	// O_2py - O_2py  ==============================================================
+	{
+		const auto& atom1Prims = Oxygen::orbital_2py.primitiveGaussians;
+		const auto& atom2Prims = Oxygen::orbital_2py.primitiveGaussians;
+		result = 0.0;
+
+		double positionDelta = position1.y - position2.y;
+
+		double s_y_1_0 = -1 * (position1.y - ((position1.y * atom1Prims[0].alpha + position2.y * atom2Prims[0].alpha) * oneDividedByAlpha1PlusAlpha2_2py2py[0]));
+		result += factors_2py2py[0] * std::exp(expFactors_2py2py[0] * dotProduct) * (s_y_1_0 * s_y_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2py2py[0] + positionDelta * s_y_1_0);
+
+		s_y_1_0 = -1 * (position1.y - ((position1.y * atom1Prims[0].alpha + position2.y * atom2Prims[1].alpha) * oneDividedByAlpha1PlusAlpha2_2py2py[1]));
+		result += factors_2py2py[1] * std::exp(expFactors_2py2py[1] * dotProduct) * (s_y_1_0 * s_y_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2py2py[1] + positionDelta * s_y_1_0);
+
+		s_y_1_0 = -1 * (position1.y - ((position1.y * atom1Prims[0].alpha + position2.y * atom2Prims[2].alpha) * oneDividedByAlpha1PlusAlpha2_2py2py[2]));
+		result += factors_2py2py[2] * std::exp(expFactors_2py2py[2] * dotProduct) * (s_y_1_0 * s_y_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2py2py[2] + positionDelta * s_y_1_0);
+
+		s_y_1_0 = -1 * (position1.y - ((position1.y * atom1Prims[1].alpha + position2.y * atom2Prims[0].alpha) * oneDividedByAlpha1PlusAlpha2_2py2py[3]));
+		result += factors_2py2py[3] * std::exp(expFactors_2py2py[3] * dotProduct) * (s_y_1_0 * s_y_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2py2py[3] + positionDelta * s_y_1_0);
+
+		s_y_1_0 = -1 * (position1.y - ((position1.y * atom1Prims[1].alpha + position2.y * atom2Prims[1].alpha) * oneDividedByAlpha1PlusAlpha2_2py2py[4]));
+		result += factors_2py2py[4] * std::exp(expFactors_2py2py[4] * dotProduct) * (s_y_1_0 * s_y_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2py2py[4] + positionDelta * s_y_1_0);
+
+		s_y_1_0 = -1 * (position1.y - ((position1.y * atom1Prims[1].alpha + position2.y * atom2Prims[2].alpha) * oneDividedByAlpha1PlusAlpha2_2py2py[5]));
+		result += factors_2py2py[5] * std::exp(expFactors_2py2py[5] * dotProduct) * (s_y_1_0 * s_y_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2py2py[5] + positionDelta * s_y_1_0);
+
+		s_y_1_0 = -1 * (position1.y - ((position1.y * atom1Prims[2].alpha + position2.y * atom2Prims[0].alpha) * oneDividedByAlpha1PlusAlpha2_2py2py[6]));
+		result += factors_2py2py[6] * std::exp(expFactors_2py2py[6] * dotProduct) * (s_y_1_0 * s_y_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2py2py[6] + positionDelta * s_y_1_0);
+
+		s_y_1_0 = -1 * (position1.y - ((position1.y * atom1Prims[2].alpha + position2.y * atom2Prims[1].alpha) * oneDividedByAlpha1PlusAlpha2_2py2py[7]));
+		result += factors_2py2py[7] * std::exp(expFactors_2py2py[7] * dotProduct) * (s_y_1_0 * s_y_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2py2py[7] + positionDelta * s_y_1_0);
+
+		s_y_1_0 = -1 * (position1.y - ((position1.y * atom1Prims[2].alpha + position2.y * atom2Prims[2].alpha) * oneDividedByAlpha1PlusAlpha2_2py2py[8]));
+		result += factors_2py2py[8] * std::exp(expFactors_2py2py[8] * dotProduct) * (s_y_1_0 * s_y_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2py2py[8] + positionDelta * s_y_1_0);
+	}
+	overlapMatrix(row + 3, col + 3) = result;
+
+	// O_2pz - O_2pz  ==============================================================
+	{
+		const auto& atom1Prims = Oxygen::orbital_2pz.primitiveGaussians;
+		const auto& atom2Prims = Oxygen::orbital_2pz.primitiveGaussians;
+		result = 0.0;
+
+		double positionDelta = position1.z - position2.z;
+
+		double s_z_1_0 = -1 * (position1.z - ((position1.z * atom1Prims[0].alpha + position2.z * atom2Prims[0].alpha) * oneDividedByAlpha1PlusAlpha2_2pz2pz[0]));
+		result += factors_2pz2pz[0] * std::exp(expFactors_2pz2pz[0] * dotProduct) * (s_z_1_0 * s_z_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2pz2pz[0] + positionDelta * s_z_1_0);
+
+		s_z_1_0 = -1 * (position1.z - ((position1.z * atom1Prims[0].alpha + position2.z * atom2Prims[1].alpha) * oneDividedByAlpha1PlusAlpha2_2pz2pz[1]));
+		result += factors_2pz2pz[1] * std::exp(expFactors_2pz2pz[1] * dotProduct) * (s_z_1_0 * s_z_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2pz2pz[1] + positionDelta * s_z_1_0);
+
+		s_z_1_0 = -1 * (position1.z - ((position1.z * atom1Prims[0].alpha + position2.z * atom2Prims[2].alpha) * oneDividedByAlpha1PlusAlpha2_2pz2pz[2]));
+		result += factors_2pz2pz[2] * std::exp(expFactors_2pz2pz[2] * dotProduct) * (s_z_1_0 * s_z_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2pz2pz[2] + positionDelta * s_z_1_0);
+
+		s_z_1_0 = -1 * (position1.z - ((position1.z * atom1Prims[1].alpha + position2.z * atom2Prims[0].alpha) * oneDividedByAlpha1PlusAlpha2_2pz2pz[3]));
+		result += factors_2pz2pz[3] * std::exp(expFactors_2pz2pz[3] * dotProduct) * (s_z_1_0 * s_z_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2pz2pz[3] + positionDelta * s_z_1_0);
+
+		s_z_1_0 = -1 * (position1.z - ((position1.z * atom1Prims[1].alpha + position2.z * atom2Prims[1].alpha) * oneDividedByAlpha1PlusAlpha2_2pz2pz[4]));
+		result += factors_2pz2pz[4] * std::exp(expFactors_2pz2pz[4] * dotProduct) * (s_z_1_0 * s_z_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2pz2pz[4] + positionDelta * s_z_1_0);
+
+		s_z_1_0 = -1 * (position1.z - ((position1.z * atom1Prims[1].alpha + position2.z * atom2Prims[2].alpha) * oneDividedByAlpha1PlusAlpha2_2pz2pz[5]));
+		result += factors_2pz2pz[5] * std::exp(expFactors_2pz2pz[5] * dotProduct) * (s_z_1_0 * s_z_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2pz2pz[5] + positionDelta * s_z_1_0);
+
+		s_z_1_0 = -1 * (position1.z - ((position1.z * atom1Prims[2].alpha + position2.z * atom2Prims[0].alpha) * oneDividedByAlpha1PlusAlpha2_2pz2pz[6]));
+		result += factors_2pz2pz[6] * std::exp(expFactors_2pz2pz[6] * dotProduct) * (s_z_1_0 * s_z_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2pz2pz[6] + positionDelta * s_z_1_0);
+
+		s_z_1_0 = -1 * (position1.z - ((position1.z * atom1Prims[2].alpha + position2.z * atom2Prims[1].alpha) * oneDividedByAlpha1PlusAlpha2_2pz2pz[7]));
+		result += factors_2pz2pz[7] * std::exp(expFactors_2pz2pz[7] * dotProduct) * (s_z_1_0 * s_z_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2pz2pz[7] + positionDelta * s_z_1_0);
+
+		s_z_1_0 = -1 * (position1.z - ((position1.z * atom1Prims[2].alpha + position2.z * atom2Prims[2].alpha) * oneDividedByAlpha1PlusAlpha2_2pz2pz[8]));
+		result += factors_2pz2pz[8] * std::exp(expFactors_2pz2pz[8] * dotProduct) * (s_z_1_0 * s_z_1_0 + 0.5 * oneDividedByAlpha1PlusAlpha2_2pz2pz[8] + positionDelta * s_z_1_0);
+	}
+	overlapMatrix(row + 4, col + 4) = result;
 
 	// Copy the values so the matrix is symmetric
 	overlapMatrix.block<5, 5>(col, row) = overlapMatrix.block<5, 5>(row, col).transpose();
