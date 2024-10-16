@@ -29,7 +29,7 @@ int main()
 
 		std::vector<Atom> atoms =
 		{
-			{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.5, 0.24026010 } },
+			{ ATOM_TYPE::Nitrogen, 7, { -1.0, -0.5, -0.24026010 } },
 			{ ATOM_TYPE::Nitrogen, 7, { 0.2, -0.1, -0.24026010 } },
 		};
 

@@ -519,6 +519,35 @@ static void Overlap_H2O2_STO3G_TEST(benchmark::State& state)
 		Eigen::MatrixXd overlap = test::OverlapMatrix(atoms);
 }
 
+static void Overlap_H2O2N_STO3G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } },
+		{ ATOM_TYPE::Nitrogen, 7,   { -1.2, 0.123, -0.6 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = OverlapMatrix(atoms, STO_3G);
+}
+static void Overlap_H2O2N_STO3G_TEST(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } },
+		{ ATOM_TYPE::Nitrogen, 7,   { -1.2, 0.123, -0.6 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd overlap = test::OverlapMatrix(atoms);
+}
+
 // Overlap - STO_3G
 BENCHMARK(Overlap_HH_STO3G);
 BENCHMARK(Overlap_HH_STO3G_TEST);
@@ -528,6 +557,9 @@ BENCHMARK(Overlap_H2O_STO3G_TEST);
 
 BENCHMARK(Overlap_H2O2_STO3G);
 BENCHMARK(Overlap_H2O2_STO3G_TEST);
+
+BENCHMARK(Overlap_H2O2N_STO3G);
+BENCHMARK(Overlap_H2O2N_STO3G_TEST);
 
 
 

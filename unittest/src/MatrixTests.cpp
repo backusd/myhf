@@ -181,7 +181,6 @@ static int OverlapMatrixTest(const std::string& file)
 
 	return numFailures;
 }
-
 int OverlapMatrixTest()
 {
 	std::println("==============================================================================");
@@ -192,6 +191,120 @@ int OverlapMatrixTest()
 	failures += OverlapMatrixTest("data/overlap-matrix-expected-values_two-atom_sto-6g.json");
 	failures += OverlapMatrixTest("data/overlap-matrix-expected-values_three-atom_sto-3g.json");
 	failures += OverlapMatrixTest("data/overlap-matrix-expected-values_three-atom_sto-6g.json");
+
+	return failures;
+}
+
+static int OverlapMatrixTest_Fast(const std::string& file)
+{
+	MatrixExpectedData expectedData;
+	try
+	{
+		std::println("Loading test descriptions: {0}...", file);
+		std::ifstream f(file);
+		json data = json::parse(f);
+		expectedData = data.template get<MatrixExpectedData>();
+	}
+	catch (const std::exception& e)
+	{
+		std::println("Failed to read {0}. Caught exception with message: {1}", file, e.what());
+		return 1;
+	}
+
+	Eigen::MatrixXd expectedMatrix;
+	//	const double epsilon = 0.000005;
+	unsigned int numSignificantDigits = 9;
+
+	const unsigned int numberOfTests = static_cast<unsigned int>(expectedData.results.size());
+	unsigned int testNumber = 0;
+	unsigned int numFailures = 0;
+
+	for (auto& result : expectedData.results)
+	{
+		if (numFailures > 0)
+			break;
+
+		++testNumber;
+
+		// Construct the overlap matrix
+		expectedMatrix = Eigen::MatrixXd(result.numRows, result.numCols);
+		for (unsigned int row = 0; row < result.numRows; ++row)
+			for (unsigned int col = 0; col < result.numCols; ++col)
+				expectedMatrix(row, col) = result.values[static_cast<size_t>(row) * result.numCols + col];
+
+		try
+		{
+			bool failure = false;
+
+			std::vector<Atom> atoms;
+			unsigned int atomCount = static_cast<unsigned int>(result.atoms.size());
+			atoms.reserve(atomCount);
+
+			for (unsigned int iii = 0; iii < atomCount; ++iii)
+			{
+				ATOM_TYPE type = GetAtomType(result.atoms[iii]);
+				unsigned int positionIndex0 = iii * 3;
+				atoms.emplace_back(type, static_cast<unsigned int>(type), Vec3d{ result.positions[positionIndex0], result.positions[positionIndex0 + 1], result.positions[positionIndex0 + 2] });
+			}
+
+			const Basis& basis = GetBasis(result.basis);
+			if (result.basis != "sto-3g")
+			{
+				LOG_ERROR("Found basis '{}', but only STO-3G is currently supported", result.basis);
+				continue;
+			}
+			Eigen::MatrixXd actualMatrix = myhf::test::OverlapMatrix(atoms);
+
+			// 1. matrix shape must match
+			MATRIX_VALUE_TEST(static_cast<unsigned int>(actualMatrix.cols()) == result.numCols, "Column counts do not match");
+			if (failure) continue;
+
+			MATRIX_VALUE_TEST(static_cast<unsigned int>(actualMatrix.rows()) == result.numRows, "Row counts do not match");
+			if (failure) continue;
+
+			// 2. Each value must be within the margin for error
+			for (unsigned int row_i = 0; row_i < result.numRows; ++row_i)
+			{
+				for (unsigned int col_i = 0; col_i < result.numCols; ++col_i)
+				{
+					MATRIX_VALUE_TEST(EqualUpToNSignificantDigits(actualMatrix(row_i, col_i), expectedMatrix(row_i, col_i), numSignificantDigits), std::format("Overlap values at ({0}, {1}) do not match", row_i, col_i));
+					if (failure)
+						break;
+				}
+				if (failure) break;
+			}
+			if (failure) continue;
+
+			// Report Success
+			std::string allNames;
+			for (const std::string& shortName : result.atoms)
+			{
+				allNames += shortName;
+				allNames += ' ';
+			}
+			LOG_INFO("[PASSED] Test {0} / {1}: [{2}] {3}", testNumber, numberOfTests, basis.name, allNames);
+		}
+		catch (std::exception& ex)
+		{
+			LOG_ERROR("ERROR: Caught exception: {}", ex.what());
+		}
+	}
+
+	if (numFailures > 0)
+		LOG_WARN("SUMMARY: Passed = {0}   Failed = {1}", numberOfTests - numFailures, numFailures);
+	else
+		LOG_INFO("SUMMARY: All tests passed");
+
+	return numFailures;
+}
+int OverlapMatrixTest_Fast()
+{
+	std::println("==============================================================================");
+	std::println("Overlap Matrix Test (Fast)");
+	std::println("==============================================================================");
+
+	int failures = OverlapMatrixTest_Fast("data/fast-overlap-matrix-expected-values_two-atom_sto-3g.json");
+	failures += OverlapMatrixTest_Fast("data/fast-overlap-matrix-expected-values_three-atom_sto-3g.json");
 
 	return failures;
 }

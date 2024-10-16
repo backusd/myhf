@@ -45,7 +45,7 @@
     <ClCompile Include="src\Molecule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\DataDrivenTest.cpp">
+    <ClCompile Include="src\Basis_Fast.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\HF.cpp">
@@ -54,7 +54,7 @@
     <ClCompile Include="src\Profiling.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\HF_2.cpp">
+    <ClCompile Include="src\HF_Fast.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -95,7 +95,7 @@
     <ClInclude Include="src\Molecule.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\DataDrivenTest.h">
+    <ClInclude Include="src\Basis_Fast.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\HF.h">
@@ -104,7 +104,7 @@
     <ClInclude Include="src\Profiling.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\HF_2.h">
+    <ClInclude Include="src\HF_Fast.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

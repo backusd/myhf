@@ -98,9 +98,9 @@
   <ItemGroup>
     <ClCompile Include="src\Atom.cpp" />
     <ClCompile Include="src\Basis.cpp" />
-    <ClCompile Include="src\DataDrivenTest.cpp" />
+    <ClCompile Include="src\Basis_Fast.cpp" />
     <ClCompile Include="src\HF.cpp" />
-    <ClCompile Include="src\HF_2.cpp" />
+    <ClCompile Include="src\HF_Fast.cpp" />
     <ClCompile Include="src\Integrals.cpp" />
     <ClCompile Include="src\MathUtils.cpp" />
     <ClCompile Include="src\Molecule.cpp" />
@@ -118,9 +118,9 @@
     <ClInclude Include="myhf.h" />
     <ClInclude Include="src\Atom.h" />
     <ClInclude Include="src\Basis.h" />
-    <ClInclude Include="src\DataDrivenTest.h" />
+    <ClInclude Include="src\Basis_Fast.h" />
     <ClInclude Include="src\HF.h" />
-    <ClInclude Include="src\HF_2.h" />
+    <ClInclude Include="src\HF_Fast.h" />
     <ClInclude Include="src\Integrals.h" />
     <ClInclude Include="src\MathUtils.h" />
     <ClInclude Include="src\Molecule.h" />

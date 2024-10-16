@@ -1,32 +1,65 @@
-* For all the cases where we omit the computation and just say that 
-  the value is equal to (or -1 *) the other computed value, prove that
-  this is the case, and not something that can switch sign if the positions 
-  differ
+* FAST implementation:
+	- Unit test overlap computation up to Neon
+
+* GENERIC implementation:
+	- Nuclear-electron attraction:
+		~ Implement faster nuclear-electron attraction computation
+			* Get access to the paper the faster version is based on
+			* Is there no literature that solves this exactly? Or a faster approximation mechanism?
+		~ Unit test (both slow and fast implementations)
+		~ Add benchmark (also benchmark against slower implementation)
+		~ Parallelize the computation?
+		~ Finish powerpoint notes for the implementation
+	- Electron-electron integral:
+		~ Find the paper for this
+		~ Add powerpoint notes
+		~ Implement the computation
+		~ Unit test
+		~ Run benchmark
+		~ Parallelize the computation?
+		~ Finish powerpoint notes (if necessary)
+	- Hartree-Fock algorithm
+		~ Document the algorithm in powerpoint
+		~ Implement the full algorithm
+		~ Unit test
+		~ Run benchmark
+		~ Opportunities to parallelize?
+		~ Can any portion be run on the GPU (cuda)?
+		~ Read that one paper about Hartree-Fock computation on GPUs
+	- Tests:
+		~ How accurate are different basis sets? How long do they take to compute?
+			* Add support for MANY other basis sets.
+			* Add support for more atoms than Calcium (if you think that would be useful)
+		~ Once you have a molecule solved, if you change nuclear positions slightly, how 
+		  fast is the next computation? In theory, it should be quite a bit faster because
+		  you should start with orbitals that are very close to what the final result should be.
+			* Generate a graph of nuclear displacement vs. computation time (or nuclear displacement
+			  vs. Hartree-Fock iterations) to get an idea of how much longer the computation takes
+			  when nuclei move between each iteration.
+
+* Fun extension:
+	- Build a modeling application
+		~ Build custom molecules and selectively look at electron orbitals
+		~ Can we build a web-based application around this?
+			* Can you use something like emscriptem?
+			* Or would it be better to just do the computation on the backend and then send the
+			  results down?
+			* How does the 3D modeling on the PDB website work?
+
+* Gradient computation:
+	- Understand the one paper that describes gradient computation
+	- Are there papers on how to implement?
+	- Once you have an implementation and have tested multiple basis sets, eventually we should
+	  reach an algorithm that is reasonably accurate (whatever that means...), at which point, 
+	  we should implement the faster ("data driven") implementation for all the integral calculations
+	  for the given basis set we have decided to use.
 
 
 
 
 
-* Benchmark the current version of Nuclear Matrix computation
-* Write a parallel implementation of the overlap matrix calculation
-	- Regardless of whether its faster or slower, do the same thing for
-      the other 2 matrix calculations
-* Unit test the current version of the Nuclear matrix computation
-	- How much does changing epsilon change the final result?
-	- How much does changing epsilon change the computation speed?
-* Adding profiling to profile the Nuclear matrix computation
-	- Can it be sped up further?
-	- Profile it in a single thread implementation first
-* Implement the faster version that is in the C++ Hartree Fock program
-	- Is it actually faster?
 
 
-
-
-Basis Sets
-	* Support the following basis sets:
-		- STO-3G, STO-6G, 6-31G, 6-31G* [aka 6-31G(d)], 6-31G** [aka 6-31G(d,p)]
-	* Support all atoms up to Calcium (20)
 
 
 Unit Tests
