@@ -31,6 +31,9 @@ struct Vec3
 		return *this;
 	}
 
+	constexpr const T& operator[](unsigned int index) const noexcept { return (&x)[index]; }
+	constexpr T& operator[](unsigned int index) noexcept { return (&x)[index]; }
+
 	constexpr const Vec3<T>& operator+() const noexcept { return *this; }
 	constexpr Vec3<T> operator-() const noexcept { return { -x, -y, -z }; }
 
