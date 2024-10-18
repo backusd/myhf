@@ -46,14 +46,14 @@ static bool EqualUpToNSignificantDigits(double v1, double v2, unsigned int numDi
 
 	bool val = std::abs(v2 - v1) < std::pow(0.1, numDigits) * std::max(std::abs(v1), std::abs(v2));
 
-	if (!val)
-	{
-		double n1 = std::abs(v2 - v1);
-		double n2 = std::pow(0.1, numDigits);
-		double n3 = std::max(std::abs(v1), std::abs(v2));
-		double n4 = n2 * n3;
-		int ijij = 0;
-	}
+//	if (!val)
+//	{
+//		double n1 = std::abs(v2 - v1);
+//		double n2 = std::pow(0.1, numDigits);
+//		double n3 = std::max(std::abs(v1), std::abs(v2));
+//		double n4 = n2 * n3;
+//		int ijij = 0;
+//	}
 
 	return val;
 }
@@ -618,6 +618,118 @@ int OverlapAndKineticEnergyMatrixTest()
 	failures += OverlapAndKineticEnergyMatrixTest(   "data/overlap-matrix-expected-values_two-atom_sto-6g.json",   "data/kinetic-matrix-expected-values_two-atom_sto-6g.json");
 	failures += OverlapAndKineticEnergyMatrixTest(   "data/overlap-matrix-expected-values_three-atom_sto-3g.json", "data/kinetic-matrix-expected-values_three-atom_sto-3g.json");
 	failures += OverlapAndKineticEnergyMatrixTest(   "data/overlap-matrix-expected-values_three-atom_sto-6g.json", "data/kinetic-matrix-expected-values_three-atom_sto-6g.json");
+
+	return failures;
+}
+
+static int NuclearElectronAttractionMatrixTest(const std::string& file)
+{
+	MatrixExpectedData expectedData;
+	try
+	{
+		std::println("Loading test descriptions: {0}...", file);
+		std::ifstream f(file);
+		json data = json::parse(f);
+		expectedData = data.template get<MatrixExpectedData>();
+	}
+	catch (const std::exception& e)
+	{
+		std::println("Failed to read {0}. Caught exception with message: {1}", file, e.what());
+		return 1;
+	}
+
+	Eigen::MatrixXd expectedMatrix;
+	//	const double epsilon = 0.000005;
+	unsigned int numSignificantDigits = 2; // 9;
+
+	const unsigned int numberOfTests = static_cast<unsigned int>(expectedData.results.size());
+	unsigned int testNumber = 0;
+	unsigned int numFailures = 0;
+
+	for (auto& result : expectedData.results)
+	{
+		if (numFailures > 0)
+			break;
+
+		++testNumber;
+
+		// Construct the overlap matrix
+		expectedMatrix = Eigen::MatrixXd(result.numRows, result.numCols);
+		for (unsigned int row = 0; row < result.numRows; ++row)
+			for (unsigned int col = 0; col < result.numCols; ++col)
+				expectedMatrix(row, col) = result.values[static_cast<size_t>(row) * result.numCols + col];
+
+		try
+		{
+			bool failure = false;
+
+			std::vector<Atom> atoms;
+			unsigned int atomCount = static_cast<unsigned int>(result.atoms.size());
+			atoms.reserve(atomCount);
+
+			for (unsigned int iii = 0; iii < atomCount; ++iii)
+			{
+				ATOM_TYPE type = GetAtomType(result.atoms[iii]);
+				unsigned int positionIndex0 = iii * 3;
+				atoms.emplace_back(type, static_cast<unsigned int>(type), Vec3d{ result.positions[positionIndex0], result.positions[positionIndex0 + 1], result.positions[positionIndex0 + 2] });
+			}
+
+			const Basis& basis = GetBasis(result.basis);
+			Eigen::MatrixXd actualMatrix = NuclearElectronAttractionEnergyMatrix(atoms, basis);
+
+			// 1. matrix shape must match
+			MATRIX_VALUE_TEST(static_cast<unsigned int>(actualMatrix.cols()) == result.numCols, "Column counts do not match");
+			if (failure) continue;
+
+			MATRIX_VALUE_TEST(static_cast<unsigned int>(actualMatrix.rows()) == result.numRows, "Row counts do not match");
+			if (failure) continue;
+
+			// 2. Each value must be within the margin for error
+			for (unsigned int row_i = 0; row_i < result.numRows; ++row_i)
+			{
+				for (unsigned int col_i = 0; col_i < result.numCols; ++col_i)
+				{
+					MATRIX_VALUE_TEST(EqualUpToNSignificantDigits(actualMatrix(row_i, col_i), expectedMatrix(row_i, col_i), numSignificantDigits), std::format("Values at ({0}, {1}) do not match", row_i, col_i));
+					if (failure)
+						break;
+				}
+				if (failure) break;
+			}
+			if (failure) continue;
+
+			// Report Success
+			std::string allNames;
+			for (const std::string& shortName : result.atoms)
+			{
+				allNames += shortName;
+				allNames += ' ';
+			}
+			LOG_INFO("[PASSED] Test {0} / {1}: [{2}] {3}", testNumber, numberOfTests, basis.name, allNames);
+		}
+		catch (std::exception& ex)
+		{
+			LOG_ERROR("ERROR: Caught exception: {}", ex.what());
+		}
+	}
+
+	if (numFailures > 0)
+		LOG_WARN("SUMMARY: Passed = {0}   Failed = {1}", numberOfTests - numFailures, numFailures);
+	else
+		LOG_INFO("SUMMARY: All tests passed");
+
+	return numFailures;
+}
+
+int NuclearElectronAttractionMatrixTest()
+{
+	std::println("==============================================================================");
+	std::println("Nuclear Electron Attraction Matrix Test");
+	std::println("==============================================================================");
+
+	int failures = NuclearElectronAttractionMatrixTest("data/nuclear-electron-attraction-matrix-expected-values_two-atom_sto-3g.json");
+	failures += NuclearElectronAttractionMatrixTest("data/nuclear-electron-attraction-matrix-expected-values_two-atom_sto-6g.json");
+	failures += NuclearElectronAttractionMatrixTest("data/nuclear-electron-attraction-matrix-expected-values_three-atom_sto-3g.json");
+	failures += NuclearElectronAttractionMatrixTest("data/nuclear-electron-attraction-matrix-expected-values_three-atom_sto-6g.json");
 
 	return failures;
 }

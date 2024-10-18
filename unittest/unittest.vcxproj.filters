@@ -39,4 +39,10 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="data\nuclear-electron-attraction-matrix-expected-values_three-atom_sto-3g.json" />
+    <None Include="data\nuclear-electron-attraction-matrix-expected-values_three-atom_sto-6g.json" />
+    <None Include="data\nuclear-electron-attraction-matrix-expected-values_two-atom_sto-3g.json" />
+    <None Include="data\nuclear-electron-attraction-matrix-expected-values_two-atom_sto-6g.json" />
+  </ItemGroup>
 </Project>

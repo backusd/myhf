@@ -1,11 +1,30 @@
-* FAST implementation:
-	- Unit test overlap computation up to Neon
+DONE -- Understand the code AND math for how the Hartree-Fock program implements the NUC calculation
+* Implement that method for the calculation
+	- Compare speed with the slower implementation
+	- Compare accuracy between the Hartree-Fock program and PySCF
+* Understand how PySCF implements that calculation 
+	- Is the underlying implementation in C?
+* Re-read the HSERILib paper and see if you can derive the NUC calculation from there
+* Once you've derived the NUC calculation, can you improve the integrals (performance &/or accuracy) with a better interpolation scheme?
+
+
+
+
+
+
 
 * GENERIC implementation:
+	- Figure out why my implementation of the Nuc integral differs from both PySCF and the
+      Hartree-Fock programs. What is the most accurate way to evaluate the integral?
+		~ Probably need to find better literature on it.
+	- Probably a good idea to also generate unit test data from PySCF for all integrals
 	- Nuclear-electron attraction:
+		~ Add unit testing: make sure slow implementation is correct first
 		~ Implement faster nuclear-electron attraction computation
 			* Get access to the paper the faster version is based on
 			* Is there no literature that solves this exactly? Or a faster approximation mechanism?
+		~ How does PySCF implement this calculation?
+			* Do they cite the literature they followed?
 		~ Unit test (both slow and fast implementations)
 		~ Add benchmark (also benchmark against slower implementation)
 		~ Parallelize the computation?
@@ -49,6 +68,7 @@
 * Gradient computation:
 	- Understand the one paper that describes gradient computation
 	- Are there papers on how to implement?
+	- NOTE: pyscf seems to include gradient calculations (see https://github.com/pyscf/pyscf/blob/master/examples/gto/20-ao_integrals.py)
 	- Once you have an implementation and have tested multiple basis sets, eventually we should
 	  reach an algorithm that is reasonably accurate (whatever that means...), at which point, 
 	  we should implement the faster ("data driven") implementation for all the integral calculations

@@ -59,6 +59,18 @@ struct QuantumNumbers
 
 	constexpr unsigned int GetCanonicalIndex() const noexcept
 	{
+		// Example of canonical indices for L = 3 (L = l + m + n)
+		//		Quantum Numbers		Canonical Index
+		//		(3, 0, 0)			0
+		//		(2, 1, 0)			1
+		//		(2, 0, 1)			2	
+		//		(1, 2, 0)			3
+		//		(1, 1, 1)			4
+		//		(1, 0, 2)			5
+		//		(0, 3, 0)			6
+		//		(0, 2, 1)			7
+		//		(0, 1, 2)			8
+		//		(0, 0, 3)			9
 		return (m + n + 1) * (m + n + 2) / 2 - m - 1;
 	}
 

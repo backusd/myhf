@@ -6,7 +6,8 @@ using namespace myhf;
 int main()
 {
 //	OverlapMatrixTest();
-	OverlapMatrixTest_Fast();
+//	OverlapMatrixTest_Fast();
 //	KineticEnergyMatrixTest();
 //	OverlapAndKineticEnergyMatrixTest();
+	NuclearElectronAttractionMatrixTest();
 }
