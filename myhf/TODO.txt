@@ -1,6 +1,13 @@
 DONE -- Understand the code AND math for how the Hartree-Fock program implements the NUC calculation
-* Implement that method for the calculation
+DONE -- Implement that method for the calculation
 	- Compare speed with the slower implementation
+	- Finish making small tweaks, like better iteration over quantum numbers and more constexpr
+		* We are creating a new MatrixXd every time we do the vertical recursion. 
+			This should be changed to use a StackMatrix and reuse the memory upon each iteration
+	- Profile the new implementation
+	- Make improvements to slower parts
+	- Figure out what kind of accuracy you're getting with the Boys functions
+		- Consider a caching scheme for better/faster Boys calculation
 	- Compare accuracy between the Hartree-Fock program and PySCF
 * Understand how PySCF implements that calculation 
 	- Is the underlying implementation in C?

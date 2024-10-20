@@ -26,11 +26,11 @@ int main()
 		{ ATOM_TYPE::Oxygen, 8, { 0.0, 0.0, 0.24026010 } },
 	};
 
-	atoms =
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.5,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Aluminum, 13, { 0.2, -0.1234, 0.24026010 } },
-	};
+//	atoms =
+//	{
+//		{ ATOM_TYPE::Hydrogen, 1, { 0.5,  1.43233673, -0.96104039 } },
+//		{ ATOM_TYPE::Aluminum, 13, { 0.2, -0.1234, 0.24026010 } },
+//	};
 
 	//std::vector<Atom> atoms =
 	//{
@@ -77,6 +77,14 @@ int main()
 	std::println("\nStarted 3...");
 	Eigen::MatrixXd nuclearMatrix3 = NuclearElectronAttractionEnergyMatrix_3(atoms, STO_3G);
 	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix3 << '\n';
+
+//	std::println("\nStarted 4...");
+//	Eigen::MatrixXd nuclearMatrix4 = NuclearElectronAttractionEnergyMatrix_4(atoms, STO_3G);
+//	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix4 << '\n';
+
+	std::println("\nStarted 5...");
+	Eigen::MatrixXd nuclearMatrix5 = NuclearElectronAttractionEnergyMatrix_5(atoms, STO_3G);
+	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix5 << '\n';
 
 //
 //	Eigen::MatrixXd nuclearMatrix2 = NuclearElectronAttractionEnergyMatrix_Par(atoms, STO_3G);
