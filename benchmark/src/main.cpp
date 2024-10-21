@@ -469,6 +469,34 @@ static void NuclearElectronAttraction_CH4_STO6G(benchmark::State& state)
 	for (auto _ : state)
 		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_6G);
 }
+static void NuclearElectronAttraction_H2O2N_STO3G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } },
+		{ ATOM_TYPE::Nitrogen, 7,   { -1.2, 0.123, -0.6 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_3G);
+}
+static void NuclearElectronAttraction_H2O2N_STO6G(benchmark::State& state)
+{
+	std::vector<Atom> atoms
+	{
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
+		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } },
+		{ ATOM_TYPE::Nitrogen, 7,   { -1.2, 0.123, -0.6 } }
+	};
+
+	for (auto _ : state)
+		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_6G);
+}
 
 static void NuclearElectronAttraction_HH_STO3G_Par(benchmark::State& state)
 {
@@ -544,86 +572,7 @@ static void NuclearElectronAttraction_CH4_STO6G_Par(benchmark::State& state)
 	for (auto _ : state)
 		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_Par(atoms, STO_6G);
 }
-
-
-
-
-
-static void NuclearElectronAttraction_HH_STO3G_2(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_2(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_HH_STO6G_2(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_2(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_H2O_STO3G_2(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_2(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_H2O_STO6G_2(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_2(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_CH4_STO3G_2(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
-		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_2(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_CH4_STO6G_2(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
-		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_2(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_H2O2N_STO3G_2(benchmark::State& state)
+static void NuclearElectronAttraction_H2O2N_STO3G_Par(benchmark::State& state)
 {
 	std::vector<Atom> atoms
 	{
@@ -635,9 +584,9 @@ static void NuclearElectronAttraction_H2O2N_STO3G_2(benchmark::State& state)
 	};
 
 	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_2(atoms, STO_3G);
+		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_Par(atoms, STO_3G);
 }
-static void NuclearElectronAttraction_H2O2N_STO6G_2(benchmark::State& state)
+static void NuclearElectronAttraction_H2O2N_STO6G_Par(benchmark::State& state)
 {
 	std::vector<Atom> atoms
 	{
@@ -649,470 +598,43 @@ static void NuclearElectronAttraction_H2O2N_STO6G_2(benchmark::State& state)
 	};
 
 	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_2(atoms, STO_6G);
-}
-
-static void NuclearElectronAttraction_HH_STO3G_3(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_3(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_HH_STO6G_3(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_3(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_H2O_STO3G_3(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_3(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_H2O_STO6G_3(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_3(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_CH4_STO3G_3(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
-		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_3(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_CH4_STO6G_3(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
-		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_3(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_H2O2N_STO3G_3(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } },
-		{ ATOM_TYPE::Nitrogen, 7,   { -1.2, 0.123, -0.6 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_3(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_H2O2N_STO6G_3(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } },
-		{ ATOM_TYPE::Nitrogen, 7,   { -1.2, 0.123, -0.6 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_3(atoms, STO_6G);
-}
-
-static void NuclearElectronAttraction_HH_STO3G_4(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_4(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_HH_STO6G_4(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_4(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_H2O_STO3G_4(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_4(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_H2O_STO6G_4(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_4(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_CH4_STO3G_4(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
-		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_4(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_CH4_STO6G_4(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
-		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_4(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_H2O2N_STO3G_4(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } },
-		{ ATOM_TYPE::Nitrogen, 7,   { -1.2, 0.123, -0.6 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_4(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_H2O2N_STO6G_4(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } },
-		{ ATOM_TYPE::Nitrogen, 7,   { -1.2, 0.123, -0.6 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_4(atoms, STO_6G);
-}
-
-static void NuclearElectronAttraction_HH_STO3G_5(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_5(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_HH_STO6G_5(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_5(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_H2O_STO3G_5(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_5(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_H2O_STO6G_5(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_5(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_CH4_STO3G_5(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
-		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_5(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_CH4_STO6G_5(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
-		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_5(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_H2O2N_STO3G_5(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } },
-		{ ATOM_TYPE::Nitrogen, 7,   { -1.2, 0.123, -0.6 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_5(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_H2O2N_STO6G_5(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } },
-		{ ATOM_TYPE::Nitrogen, 7,   { -1.2, 0.123, -0.6 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_5(atoms, STO_6G);
-}
-
-static void NuclearElectronAttraction_HH_STO3G_6(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_6(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_HH_STO6G_6(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, 0.0, 0.0 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 1.0, 0.0, 0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_6(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_H2O_STO3G_6(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_6(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_H2O_STO6G_6(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, 0.0, 0.24026010 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_6(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_CH4_STO3G_6(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
-		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_6(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_CH4_STO6G_6(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276,  0.6276,  0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, {  0.6276, -0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276,  0.6276, -0.6276 } },
-		{ ATOM_TYPE::Hydrogen, 1, { -0.6276, -0.6276,  0.6276 } },
-		{ ATOM_TYPE::Carbon, 6,   {  0.0,     0.0,     0.0 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_6(atoms, STO_6G);
-}
-static void NuclearElectronAttraction_H2O2N_STO3G_6(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } },
-		{ ATOM_TYPE::Nitrogen, 7,   { -1.2, 0.123, -0.6 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_6(atoms, STO_3G);
-}
-static void NuclearElectronAttraction_H2O2N_STO6G_6(benchmark::State& state)
-{
-	std::vector<Atom> atoms
-	{
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0,  1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Hydrogen, 1, { 0.0, -1.43233673, -0.96104039 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 0.0, -0.5, 0.24026010 } },
-		{ ATOM_TYPE::Oxygen, 8,   { 1.2, 0.0, 0.24026010 } },
-		{ ATOM_TYPE::Nitrogen, 7,   { -1.2, 0.123, -0.6 } }
-	};
-
-	for (auto _ : state)
-		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_6(atoms, STO_6G);
+		Eigen::MatrixXd neMatrix = NuclearElectronAttractionEnergyMatrix_Par(atoms, STO_6G);
 }
 
 
 
-BENCHMARK(NuclearElectronAttraction_HH_STO3G_2);
-BENCHMARK(NuclearElectronAttraction_HH_STO3G_3);
-BENCHMARK(NuclearElectronAttraction_HH_STO3G_4);
-BENCHMARK(NuclearElectronAttraction_HH_STO3G_5);
-BENCHMARK(NuclearElectronAttraction_HH_STO3G_6);
+BENCHMARK(NuclearElectronAttraction_HH_STO3G);
+BENCHMARK(NuclearElectronAttraction_HH_STO3G_Par);
 
-BENCHMARK(NuclearElectronAttraction_HH_STO6G_2);
-BENCHMARK(NuclearElectronAttraction_HH_STO6G_3);
-BENCHMARK(NuclearElectronAttraction_HH_STO6G_4);
-BENCHMARK(NuclearElectronAttraction_HH_STO6G_5);
-BENCHMARK(NuclearElectronAttraction_HH_STO6G_6);
 
-BENCHMARK(NuclearElectronAttraction_H2O_STO3G_2);
-BENCHMARK(NuclearElectronAttraction_H2O_STO3G_3);
-BENCHMARK(NuclearElectronAttraction_H2O_STO3G_4);
-BENCHMARK(NuclearElectronAttraction_H2O_STO3G_5);
-BENCHMARK(NuclearElectronAttraction_H2O_STO3G_6);
+BENCHMARK(NuclearElectronAttraction_HH_STO6G);
+BENCHMARK(NuclearElectronAttraction_HH_STO6G_Par);
 
-BENCHMARK(NuclearElectronAttraction_H2O_STO6G_2);
-BENCHMARK(NuclearElectronAttraction_H2O_STO6G_3);
-BENCHMARK(NuclearElectronAttraction_H2O_STO6G_4);
-BENCHMARK(NuclearElectronAttraction_H2O_STO6G_5);
-BENCHMARK(NuclearElectronAttraction_H2O_STO6G_6);
 
-BENCHMARK(NuclearElectronAttraction_CH4_STO3G_2);
-BENCHMARK(NuclearElectronAttraction_CH4_STO3G_3);
-BENCHMARK(NuclearElectronAttraction_CH4_STO3G_4);
-BENCHMARK(NuclearElectronAttraction_CH4_STO3G_5);
-BENCHMARK(NuclearElectronAttraction_CH4_STO3G_6);
+BENCHMARK(NuclearElectronAttraction_H2O_STO3G);
+BENCHMARK(NuclearElectronAttraction_H2O_STO3G_Par);
 
-BENCHMARK(NuclearElectronAttraction_CH4_STO6G_2);
-BENCHMARK(NuclearElectronAttraction_CH4_STO6G_3);
-BENCHMARK(NuclearElectronAttraction_CH4_STO6G_4);
-BENCHMARK(NuclearElectronAttraction_CH4_STO6G_5);
-BENCHMARK(NuclearElectronAttraction_CH4_STO6G_6);
 
-BENCHMARK(NuclearElectronAttraction_H2O2N_STO3G_2);
-BENCHMARK(NuclearElectronAttraction_H2O2N_STO3G_3);
-BENCHMARK(NuclearElectronAttraction_H2O2N_STO3G_4);
-BENCHMARK(NuclearElectronAttraction_H2O2N_STO3G_5);
-BENCHMARK(NuclearElectronAttraction_H2O2N_STO3G_6);
+BENCHMARK(NuclearElectronAttraction_H2O_STO6G);
+BENCHMARK(NuclearElectronAttraction_H2O_STO6G_Par);
 
-BENCHMARK(NuclearElectronAttraction_H2O2N_STO6G_2);
-BENCHMARK(NuclearElectronAttraction_H2O2N_STO6G_3);
-BENCHMARK(NuclearElectronAttraction_H2O2N_STO6G_4);
-BENCHMARK(NuclearElectronAttraction_H2O2N_STO6G_5);
-BENCHMARK(NuclearElectronAttraction_H2O2N_STO6G_6);
+
+BENCHMARK(NuclearElectronAttraction_CH4_STO3G);
+BENCHMARK(NuclearElectronAttraction_CH4_STO3G_Par);
+
+
+BENCHMARK(NuclearElectronAttraction_CH4_STO6G);
+BENCHMARK(NuclearElectronAttraction_CH4_STO6G_Par);
+
+
+BENCHMARK(NuclearElectronAttraction_H2O2N_STO3G);
+BENCHMARK(NuclearElectronAttraction_H2O2N_STO3G_Par);
+
+
+BENCHMARK(NuclearElectronAttraction_H2O2N_STO6G);
+BENCHMARK(NuclearElectronAttraction_H2O2N_STO6G_Par);
+
+
 
 
 //// Nuclear Electron Attraction - STO_3G

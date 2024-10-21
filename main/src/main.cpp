@@ -64,31 +64,18 @@ int main()
 //	Eigen::MatrixXd kineticMatrix = KineticEnergyMatrix(atoms, STO_3G);
 //	std::cout << "\nKinetic 1:\n" << kineticMatrix << '\n';
 
-//	PROFILE_BEGIN_SESSION("Session 1", "results.json");
-//	std::println("Started...");
-//	Eigen::MatrixXd nuclearMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_3G);
-//	std::cout << "\nNuclear:\n" << std::setprecision(8) << nuclearMatrix << '\n';
-//	PROFILE_END_SESSION();
+	PROFILE_BEGIN_SESSION("Session 1", "results.json");
+	std::println("Started...");
+	Eigen::MatrixXd nuclearMatrix = NuclearElectronAttractionEnergyMatrix(atoms, STO_3G);
+	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix << '\n';
+	PROFILE_END_SESSION();
 
-	std::println("Started 2...");
-	Eigen::MatrixXd nuclearMatrix2 = NuclearElectronAttractionEnergyMatrix_2(atoms, STO_3G);
-	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix2 << '\n';
 
-	std::println("\nStarted 3...");
-	Eigen::MatrixXd nuclearMatrix3 = NuclearElectronAttractionEnergyMatrix_3(atoms, STO_3G);
-	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix3 << '\n';
 
-//	std::println("\nStarted 4...");
-//	Eigen::MatrixXd nuclearMatrix4 = NuclearElectronAttractionEnergyMatrix_4(atoms, STO_3G);
-//	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix4 << '\n';
+//	std::println("Started 2...");
+//	Eigen::MatrixXd nuclearMatrix2 = NuclearElectronAttractionEnergyMatrix_2(atoms, STO_3G);
+//	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix2 << '\n';
 
-//	std::println("\nStarted 5...");
-//	Eigen::MatrixXd nuclearMatrix5 = NuclearElectronAttractionEnergyMatrix_5(atoms, STO_3G);
-//	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix5 << '\n';
-
-	std::println("\nStarted 6...");
-	Eigen::MatrixXd nuclearMatrix6 = NuclearElectronAttractionEnergyMatrix_6(atoms, STO_3G);
-	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix6 << '\n';
 
 //
 //	Eigen::MatrixXd nuclearMatrix2 = NuclearElectronAttractionEnergyMatrix_Par(atoms, STO_3G);

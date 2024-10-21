@@ -699,759 +699,6 @@ void OverlapAndKineticEnergyMatrix(std::span<Atom> atoms, const Basis& basis, Ei
 }
 
 // Nuclear-Electron Attraction Functions
-static double Abscissa(int n, int i) noexcept
-{
-	const double val = i * std::numbers::pi / (1. + n);
-	const double sinVal = std::sin(val);
-	const double cosVal = std::cos(val);
-	return (n + 1. - 2. * i) / (n + 1.) + 2. / std::numbers::pi * (1. + 2. / 3. * sinVal * sinVal) * cosVal * sinVal;
-}
-static double Omega(int n, int i) noexcept
-{
-	const double sinVal = std::sin(i * std::numbers::pi / (n + 1.));
-	return 16. / (3 * (1. + n)) * sinVal * sinVal * sinVal * sinVal;
-}
-static double ChebyshevIntegral(double eps, int M, const std::function<double(double)>& F) noexcept
-{
-	PROFILE_SCOPE("ChebyshevIntegral");
-
-	double c0 = std::cos(std::numbers::pi / 6.);
-	double s0 = 0.5;
-	double c1, s1, q, p, chp, c, s, x;
-
-	double err = 10.;
-
-	int n = 3;
-	c1 = s0;
-	s1 = c0;
-
-	const double res = Abscissa(2, 1);
-
-	q = (F(res) + F(-res)) * Omega(2, 1);
-	p = F(0);
-
-	chp = q + p;
-
-	int j = 0;
-
-	while (err > eps && 2. * n * (1. - j) + j * 4. * n / 3. - 1. <= M)
-	{
-		j = 1 - j;
-
-		c1 = j * c1 + (1. - j) * c0;
-		s1 = j * s1 + (1. - j) * s0;
-		c0 = j * c0 + (1. - j) * std::sqrt((1. + c0) / 2.);
-		s0 = j * s0 + (1. - j) * s0 / (c0 + c0);
-
-		c = c0;
-		s = s0;
-
-		for (int i = 1; i < n; i += 2)
-		{
-			x = 1. + 2. / (3. * std::numbers::pi) * s * c * (3. + 2. * s * s) - ((double)i) / n;
-
-			const int div = (int)((i + 2. * j) / 3.);
-			if (3 * div >= i + j)
-				chp += (F(-x) + F(x)) * s * s * s * s;
-
-			x = s;
-			s = s * c1 + c * s1;
-			c = c * c1 - x * s1;
-		}
-
-		n *= 1 + j;
-		p += (1. - j) * (chp - q);
-
-		err = 16. * std::abs((1. - j) * (q - 3. * p / 2.) + j * (chp - q - q)) / (3. * n);
-		q = (1. - j) * q + j * chp;
-	}
-
-	chp = 16. * q / (3. * n);
-
-	return chp;
-}
-static double NuclearElectronAttractionOfTwoPrimitiveGaussians(double alpha1, double alpha2, const Vec3d& position1, const Vec3d& position2, const Vec3d& nuclearCenter, const QuantumNumbers& angularMomentum1, const QuantumNumbers& angularMomentum2) noexcept
-{
-	double oneDividedByAlpha1PlusAlpha2 = 1 / (alpha1 + alpha2);
-
-	// NOTE: Because the functions within the each matrix capture a reference to the matrix itself, we cannot easily
-	//       separate this into a separate function, otherwise we would have to worry about dangling references. For 
-	//       simplicity, we create each matrix on the stack here, and that guarantees the lifetime of each function we create
-	StackMatrix2D_Functions eta_x(angularMomentum1.l + angularMomentum2.l + 1, angularMomentum2.l + 1);
-	StackMatrix2D_Functions eta_y(angularMomentum1.m + angularMomentum2.m + 1, angularMomentum2.m + 1);
-	StackMatrix2D_Functions eta_z(angularMomentum1.n + angularMomentum2.n + 1, angularMomentum2.n + 1);
-
-	eta_x(0, 0) = [](double) -> double { return 1.0; };
-	eta_y(0, 0) = [](double) -> double { return 1.0; };
-	eta_z(0, 0) = [](double) -> double { return 1.0; };
-
-	// eta_x
-	if (eta_x.RowCount() > 1)
-	{
-		double p = alpha1 * position1.x + alpha2 * position2.x;
-		double pTimesOneDividedByAlpha1PlusAlpha2 = p * oneDividedByAlpha1PlusAlpha2;
-
-		// Initial conditions
-		eta_x(1, 0) = 
-			[a = -1 * (position1.x - pTimesOneDividedByAlpha1PlusAlpha2), 
-			 b = -1 * (pTimesOneDividedByAlpha1PlusAlpha2 - nuclearCenter.x)](double t) -> double
-			{
-				return a + b * t * t;
-			};
-
-		// Recurrence Index
-		for (unsigned int row = 2; row < eta_x.RowCount(); ++row)
-		{
-			eta_x(row, 0) =
-				[&eta_x, row, oneDividedByAlpha1PlusAlpha2,
-				a = -1 * (position1.x - pTimesOneDividedByAlpha1PlusAlpha2),
-				b = -1 * (pTimesOneDividedByAlpha1PlusAlpha2 - nuclearCenter.x),
-				c = (row - 1) * 0.5 * oneDividedByAlpha1PlusAlpha2](double t) -> double
-				{
-					return a + b * t * t * eta_x(row - 1, 0)(t) + c * (1 - t * t) * eta_x(row - 2, 0)(t);
-				};
-		}
-
-		// Transfer Equation
-		//     The recurrence relation requires filling out each column before moving on to the next one.
-		//     Therefore, the outer loop must be the loop over the columns
-		for (unsigned int col = 1; col < eta_x.ColumnCount(); ++col)
-		{
-			for (unsigned int row = 0; row + col <= angularMomentum1.l + angularMomentum2.l; ++row)
-			{
-				eta_x(row, col) = [&eta_x, row, col, a = position1.x - position2.x](double t) -> double
-					{
-						return eta_x(row + 1, col - 1)(t) + a * eta_x(row, col - 1)(t);
-					};
-			}
-		}
-	}
-
-	// eta_y
-	if (eta_y.RowCount() > 1)
-	{
-		double p = alpha1 * position1.y + alpha2 * position2.y;
-		double pTimesOneDividedByAlpha1PlusAlpha2 = p * oneDividedByAlpha1PlusAlpha2; 
-
-		// Initial conditions
-		eta_y(1, 0) = 
-			[a = -1 * (position1.y - pTimesOneDividedByAlpha1PlusAlpha2), 
-			 b = -1 * (pTimesOneDividedByAlpha1PlusAlpha2 - nuclearCenter.y)](double t) -> double
-			{
-				return a + b * t * t;
-			};
-
-		// Recurrence Index
-		for (unsigned int row = 2; row < eta_y.RowCount(); ++row)
-		{
-			eta_y(row, 0) =
-				[&eta_y, row, oneDividedByAlpha1PlusAlpha2,
-				a = -1 * (position1.y - pTimesOneDividedByAlpha1PlusAlpha2),
-				b = -1 * (pTimesOneDividedByAlpha1PlusAlpha2 - nuclearCenter.y),
-				c = (row - 1) * 0.5 * oneDividedByAlpha1PlusAlpha2](double t) -> double
-				{
-					return a + b * t * t * eta_y(row - 1, 0)(t) + c * (1 - t * t) * eta_y(row - 2, 0)(t);
-				};
-		}
-
-		// Transfer Equation
-		//     The recurrence relation requires filling out each column before moving on to the next one.
-		//     Therefore, the outer loop must be the loop over the columns
-		for (unsigned int col = 1; col < eta_y.ColumnCount(); ++col)
-		{
-			for (unsigned int row = 0; row + col <= angularMomentum1.m + angularMomentum2.m; ++row)
-			{
-				eta_y(row, col) = [&eta_y, row, col, a = position1.y - position2.y](double t) -> double
-					{
-						return eta_y(row + 1, col - 1)(t) + a * eta_y(row, col - 1)(t);
-					};
-			}
-		}
-	}
-
-	// eta_z
-	if (eta_z.RowCount() > 1)
-	{
-		double p = alpha1 * position1.z + alpha2 * position2.z;
-		double pTimesOneDividedByAlpha1PlusAlpha2 = p * oneDividedByAlpha1PlusAlpha2;
-
-		// Initial conditions
-		eta_z(1, 0) = 
-			[a = -1 * (position1.z - pTimesOneDividedByAlpha1PlusAlpha2), 
-			 b = -1 * (pTimesOneDividedByAlpha1PlusAlpha2 - nuclearCenter.z)](double t) -> double
-			{
-				return a + b * t * t;
-			};
-
-		// Recurrence Index
-		for (unsigned int row = 2; row < eta_z.RowCount(); ++row)
-		{
-			eta_z(row, 0) =
-				[&eta_z, row, oneDividedByAlpha1PlusAlpha2,
-				a = -1 * (position1.z - pTimesOneDividedByAlpha1PlusAlpha2),
-				b = -1 * (pTimesOneDividedByAlpha1PlusAlpha2 - nuclearCenter.z),
-				c = (row - 1) * 0.5 * oneDividedByAlpha1PlusAlpha2](double t) -> double
-				{
-					return a + b * t * t * eta_z(row - 1, 0)(t) + c * (1 - t * t) * eta_z(row - 2, 0)(t);
-				};
-		}
-
-		// Transfer Equation
-		//     The recurrence relation requires filling out each column before moving on to the next one.
-		//     Therefore, the outer loop must be the loop over the columns
-		for (unsigned int col = 1; col < eta_z.ColumnCount(); ++col)
-		{
-			for (unsigned int row = 0; row + col <= angularMomentum1.n + angularMomentum2.n; ++row)
-			{
-				eta_z(row, col) = [&eta_z, row, col, a = position1.z - position2.z](double t) -> double
-					{
-						return eta_z(row + 1, col - 1)(t) + a * eta_z(row, col - 1)(t);
-					};
-			}
-		}
-	}
-
-
-	Vec3d diff = position2 - position1; 
-	double factor = std::exp(-1 * alpha1 * alpha2 * oneDividedByAlpha1PlusAlpha2 * diff.Dot(diff)) * 2 * std::numbers::pi * oneDividedByAlpha1PlusAlpha2;
-
-	Vec3d v = (oneDividedByAlpha1PlusAlpha2 * (alpha1 * position1 + alpha2 * position2)) - nuclearCenter;
-	auto func = [&eta_x, &eta_y, &eta_z,
-				 &angularMomentum1, &angularMomentum2,
-				 a = alpha1 + alpha2,
-	             b = v.Dot(v)](double t) -> double
-		{
-			t = (t + 1) / 2; 
-			return 0.5 * std::exp(-1 * a * t * t * b) *
-				eta_x(angularMomentum1.l, angularMomentum2.l)(t) *
-				eta_y(angularMomentum1.m, angularMomentum2.m)(t) *
-				eta_z(angularMomentum1.n, angularMomentum2.n)(t);			
-		};
-
-	return factor * ChebyshevIntegral(1E-10, 50000, func);
-}
-static double NuclearElectronAttractionEnergyOfTwoOrbitals(const Vec3d& nuclearCenter, const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
-{
-	double res = 0;
-
-	for (auto& gaussian1 : orbital1.gaussianOrbitals)
-	{
-		for (auto& gaussian2 : orbital2.gaussianOrbitals)
-		{
-			PROFILE_SCOPE("Working on 2 primitives");
-			double nuclear = NuclearElectronAttractionOfTwoPrimitiveGaussians(gaussian1.alpha, gaussian2.alpha, position1, position2, nuclearCenter, orbital1.angularMomentum, orbital2.angularMomentum);
-			res += gaussian1.normalizationFactor * gaussian2.normalizationFactor * gaussian1.coefficient * gaussian2.coefficient * nuclear;
-		}
-	}
-	return res;
-}
-MatrixXd NuclearElectronAttractionEnergyMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
-{
-	MatrixXd nuclearMatrix;
-
-	PROFILE_SCOPE("NuclearElectronAttractionEnergyMatrix");
-
-	assert(atoms.size() > 1);
-	unsigned int numberOfContractedGaussians = 0;
-	for (const Atom& atom : atoms)
-		numberOfContractedGaussians += basis.GetAtom(atom.type).NumberOfContractedGaussians();
-
-	nuclearMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
-
-	struct ComputeItem
-	{
-		unsigned int index_i;
-		unsigned int index_j;
-		const ContractedGaussianOrbital& orbital_1;
-		const ContractedGaussianOrbital& orbital_2;
-		const Vec3d& position_1;
-		const Vec3d& position_2;
-	};
-	std::vector<ComputeItem> computeItems;
-	computeItems.reserve(numberOfContractedGaussians * numberOfContractedGaussians); // Note, we are over reserving here, but thats fine to waste the extra memory
-
-	{
-		PROFILE_SCOPE("Make compute items");
-
-		unsigned int i = 0;
-		for (const auto& atom1 : atoms)
-		{
-			for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
-			{
-				for (const auto& orbital1 : shell1.basisFunctions)
-				{
-					unsigned int j = 0;
-
-					for (const auto& atom2 : atoms)
-					{
-						for (const auto& shell2 : basis.GetAtom(atom2.type).shells)
-						{
-							for (const auto& orbital2 : shell2.basisFunctions)
-							{
-								if (j >= i)
-								{
-									computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
-								}
-
-								++j;
-							}
-						}
-					}
-					++i;
-				}
-			}
-		}
-	}
-	std::for_each(computeItems.begin(), computeItems.end(), 
-		[&nuclearMatrix, &atoms](const ComputeItem& item)
-		{
-			PROFILE_SCOPE("Compute Item");
-
-			for (const auto& nuclearCenterAtom : atoms)
-			{
-				PROFILE_SCOPE("Iterating on atom");
-				nuclearMatrix(item.index_i, item.index_j) -= nuclearCenterAtom.Z() * NuclearElectronAttractionEnergyOfTwoOrbitals(nuclearCenterAtom.position, item.orbital_1, item.position_1, item.orbital_2, item.position_2);
-			}
-			if (item.index_i != item.index_j)
-				nuclearMatrix(item.index_j, item.index_i) = nuclearMatrix(item.index_i, item.index_j);
-		});
-
-	return nuclearMatrix;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static double GetNextAndPrevQNAndScalarDiffForHorizontalRecursion(const QuantumNumbers& QN1, const QuantumNumbers& QN2, const Vec3d& dif, QuantumNumbers& nextQN1, QuantumNumbers& prevQN2)
-{
-	nextQN1 = QN1;
-	prevQN2 = QN2;
-
-	const unsigned int maxIndex = QN2.MaxComponentVal();
-
-	double difScalar;
-
-	if (QN2.l == maxIndex)
-	{
-		++nextQN1.l;
-		--prevQN2.l;
-
-		difScalar = dif.x;
-	}
-	else if (QN2.m == maxIndex)
-	{
-		++nextQN1.m;
-		--prevQN2.m;
-
-		difScalar = dif.y;
-	}
-	else
-	{
-		++nextQN1.n;
-		--prevQN2.n;
-
-		difScalar = dif.z;
-	}
-
-	return difScalar;
-}
-static void IncrementQNandDecrementLimitIfNeeded(QuantumNumbers& QN, unsigned int& limit)
-{
-	const unsigned int oldL = QN.AngularMomentum();
-
-	++QN;
-	if (QN.AngularMomentum() != oldL) {
-		assert(limit > 0);
-		--limit;
-	}
-}
-
-
-
-
-static void HorizontalRecursion(MatrixXd& mat, const Vec3d& dif, unsigned int maxL1, unsigned int maxL2)
-{
-//	std::println("===========================================================================");
-//	std::println("Horizontal Recursion");
-//	std::println("===========================================================================");
-
-	unsigned int maxL = maxL1 + maxL2;
-
-	QuantumNumbers maxQN1(0, 0, maxL1);
-	QuantumNumbers maxQN2(0, 0, maxL2);
-
-	const unsigned int limit = maxQN2.GetTotalCanonicalIndex() + 1;
-
-	Eigen::MatrixXd matrixHoriz = Eigen::MatrixXd::Zero(mat.rows(), limit);
-	matrixHoriz.col(0) = mat.col(0);
-
-//	std::cout << "Initial Matrix:\n\n" << matrixHoriz << "\n\n";
-
-	for (auto currentQNj = QuantumNumbers(1, 0, 0); currentQNj <= maxL2; IncrementQNandDecrementLimitIfNeeded(currentQNj, maxL))  //this for walks over the columns of the matrix
-	{
-		for (auto currentQN = QuantumNumbers(0, 0, 0); currentQN < maxL; ++currentQN) // this for walks over the rows of the matrix
-		{
-			auto nextQN = currentQN;
-			auto prevQNj = currentQNj;
-
-			double difScalar = GetNextAndPrevQNAndScalarDiffForHorizontalRecursion(currentQN, currentQNj, dif, nextQN, prevQNj); 
-
-			unsigned int curIndex = currentQN.GetTotalCanonicalIndex();
-			unsigned int curIndexJ = currentQNj.GetTotalCanonicalIndex();
-
-			unsigned int nextIndex = nextQN.GetTotalCanonicalIndex();
-			unsigned int prevIndexJ = prevQNj.GetTotalCanonicalIndex();
-
-			matrixHoriz(curIndex, curIndexJ) = matrixHoriz(nextIndex, prevIndexJ) + difScalar * matrixHoriz(curIndex, prevIndexJ);
-
-//			std::println("-------------- Iteration --------------");
-//			std::println("maxL = {0}", maxL);
-//			std::println("currentQNj = ({0}, {1}, {2})  -->  curIndexj  = {3}", currentQNj.l, currentQNj.m, currentQNj.n, curIndexJ);
-//			std::println("currentQN  = ({0}, {1}, {2})  -->  curIndex   = {3}", currentQN.l, currentQN.m, currentQN.n, curIndex);
-//			std::println("nextQN     = ({0}, {1}, {2})  -->  nextIndex  = {3}", nextQN.l, nextQN.m, nextQN.n, nextIndex);
-//			std::println("prevQNj    = ({0}, {1}, {2})  -->  prevIndexJ = {3}", prevQNj.l, prevQNj.m, prevQNj.n, prevIndexJ);
-//			std::println("matrixHoriz({0}, {1}) = matrixHoriz({2}, {3}) + difScalar * matrixHoriz({0}, {3})", 
-//				curIndex, curIndexJ, nextIndex, prevIndexJ);
-//
-//			std::cout << "Matrix:\n\n" << matrixHoriz << "\n\n";
-		}
-	}
-
-	mat = matrixHoriz.block(0, 0, maxQN1.GetTotalCanonicalIndex() + 1ULL, limit);
-}
-
-static bool DecrementPrevAndPrevPrevAndSetN(unsigned int& prev, unsigned int& prevPrev, double& N)
-{
-	--prev;
-	if (prev > 0) {
-		N = prev;
-		prevPrev -= 2;
-
-		return true;
-	}
-
-	return false;
-}
-static bool GetPrevAndPrevPrevAndScalarsForVerticalRecursion(const QuantumNumbers& currentQN, const Vec3d& Rpa, const Vec3d& Rwp, QuantumNumbers& prevQN, QuantumNumbers& prevPrevQN, double& RpaScalar, double& RwpScalar, double& N)
-{
-	prevPrevQN = prevQN = currentQN;
-
-	const unsigned int maxIndex = currentQN.MaxComponentVal();
-
-	N = 0;
-
-	bool addPrevPrev;
-
-	if (currentQN.l == maxIndex)
-	{
-		addPrevPrev = DecrementPrevAndPrevPrevAndSetN(prevQN.l, prevPrevQN.l, N);
-
-		RpaScalar = Rpa.x;
-		RwpScalar = Rwp.x;
-	}
-	else if (currentQN.m == maxIndex)
-	{
-		addPrevPrev = DecrementPrevAndPrevPrevAndSetN(prevQN.m, prevPrevQN.m, N);
-
-		RpaScalar = Rpa.y;
-		RwpScalar = Rwp.y;
-	}
-	else
-	{
-		addPrevPrev = DecrementPrevAndPrevPrevAndSetN(prevQN.n, prevPrevQN.n, N);
-
-		RpaScalar = Rpa.z;
-		RwpScalar = Rwp.z;
-	}
-
-	return addPrevPrev;
-}
-static void VerticalRecursion(MatrixXd& mat, double alpha, const Vec3d& Rp, const Vec3d& center1, const Vec3d& difN, unsigned int maxL)
-{
-	double difScalar, difNScalar;
-	double N;
-
-	const unsigned int size = maxL + 1;
-	const auto difRp = Rp - center1;
-
-	for (auto currentQN = QuantumNumbers(1, 0, 0); currentQN < size; ++currentQN) // for each row
-	{
-		QuantumNumbers prevQN = currentQN;
-		QuantumNumbers prevPrevQN = prevQN;
-
-		const bool addPrevPrev = GetPrevAndPrevPrevAndScalarsForVerticalRecursion(currentQN, difRp, difN, prevQN, prevPrevQN, difScalar, difNScalar, N);
-
-		unsigned int curIndex = currentQN.GetTotalCanonicalIndex();
-		unsigned int prevIndex = prevQN.GetTotalCanonicalIndex();
-
-		for (unsigned int m = 0; m < size - currentQN.AngularMomentum(); ++m)
-		{
-			mat(curIndex, m) = difScalar * mat(prevIndex, m) + difNScalar * mat(prevIndex, m + 1ULL);
-
-			if (addPrevPrev)
-			{
-				unsigned int prevPrevIndex = prevPrevQN.GetTotalCanonicalIndex();
-				mat(curIndex, m) += N / (2. * alpha) * (mat(prevPrevIndex, m) - mat(prevPrevIndex, m + 1ULL));
-			}
-		}
-	}
-}
-static double BoysFunction(double m, double x)
-{
-	if (0.0 == m && 0.0 == x) 
-		return 1.0;
-
-	double res = 0;
-
-	const double t = 1E-10;
-	if (std::abs(x) < t) 
-		x = t;
-
-	if (x > 160)
-	{
-		return static_cast<double>(
-			MathUtils::DoubleFactorial(static_cast<unsigned int>(2 * m - 1)) /
-			std::pow(2, m + 1) *
-			std::sqrt(std::numbers::pi / std::pow(x, 2 * m + 1))
-			);
-	}
-
-	MathUtils::IncompleteGamma(m + 1. / 2., x, res);
-
-	return res / (2. * std::pow(x, m + 1. / 2.));
-}
-static std::vector<double> GenerateBoysFunctions(int maxM, double T) 
-{
-	std::vector<double> functions(maxM + 1ULL); 
-	functions[maxM] = BoysFunction(maxM, T); 
-
-	for (int m = maxM - 1; m >= 0; --m) 
-		functions[m] = (2. * T * functions[m + 1ULL] + std::exp(-T)) / (2. * m + 1.);
-
-	return functions;
-}
-static MatrixXd GetNuclearVertical(const Vec3d& nuclearCenter, const PrimitiveGaussian& gaussian1, const Vec3d& position1, const PrimitiveGaussian& gaussian2, const Vec3d& position2, unsigned int maxL1, unsigned int maxL2)
-{
-	MatrixXd m;
-
-	const double alpha = gaussian1.alpha + gaussian2.alpha;
-	const Vec3d Rp = (gaussian1.alpha * position1 + gaussian2.alpha * position2) / alpha;
-	const Vec3d difN = nuclearCenter - Rp;
-	const Vec3d dif = position1 - position2;
-
-	const unsigned int maxL = maxL1 + maxL2;
-	const unsigned int size = maxL + 1;
-
-	// auxiliary integrals
-	std::vector<double> boys = GenerateBoysFunctions(maxL, alpha * (difN * difN));
-
-	QuantumNumbers maxQN(0, 0, maxL);
-
-	const double factor = 2. * std::numbers::pi / alpha * std::exp(-gaussian1.alpha * gaussian2.alpha / alpha * dif * dif);
-	m = Eigen::MatrixXd::Zero(maxQN.GetTotalCanonicalIndex() + 1ULL, size);
-
-	for (unsigned int i = 0; i < size; ++i)
-		m(0, i) = factor * boys[i];
-
-	VerticalRecursion(m, alpha, Rp, position1, difN, maxL);
-
-	m = m.block(0, 0, m.rows(), 1).eval();
-	return m;
-}
-
-
-static double NuclearElectronAttractionEnergyOfTwoOrbitals_2(const Vec3d& nuclearCenter, const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
-{
-	// The algorithm assumes that the angular momentum of orbital1 is <= that of orbital2. So we need to do a swap here if that isn't the case
-	const ContractedGaussianOrbital& orbital_1 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? orbital1 : orbital2;
-	const ContractedGaussianOrbital& orbital_2 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? orbital2 : orbital1;
-
-	const Vec3d& position_1 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? position1 : position2;
-	const Vec3d& position_2 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? position2 : position1;
-
-	QuantumNumbers maxQN(0, 0, orbital_1.angularMomentum.AngularMomentum() + orbital_2.angularMomentum.AngularMomentum());
-	Eigen::MatrixXd horizNuclear = Eigen::MatrixXd::Zero(maxQN.GetTotalCanonicalIndex() + 1ULL, 1); 
-
-	for (const auto& gaussian_1 : orbital_1.gaussianOrbitals)
-	{
-		for (const auto& gaussian_2 : orbital_2.gaussianOrbitals)
-		{
-			Eigen::MatrixXd nuclear = GetNuclearVertical(nuclearCenter, gaussian_1, position_1, gaussian_2, position_2, orbital_1.angularMomentum.AngularMomentum(), orbital_2.angularMomentum.AngularMomentum());
-
-			double factor = gaussian_1.normalizationFactor * gaussian_2.normalizationFactor * gaussian_1.coefficient * gaussian_2.coefficient;
-
-			for (int row = 0; row < horizNuclear.rows(); ++row)
-				horizNuclear(row, 0) += factor * nuclear(row, 0);
-		}
-	}
-
-	HorizontalRecursion(horizNuclear, position_1 - position_2, orbital_1.angularMomentum.AngularMomentum(), orbital_2.angularMomentum.AngularMomentum());
-
-	return horizNuclear(orbital_1.angularMomentum.GetTotalCanonicalIndex(), orbital_2.angularMomentum.GetTotalCanonicalIndex());
-}
-MatrixXd NuclearElectronAttractionEnergyMatrix_2(std::span<Atom> atoms, const Basis& basis) noexcept
-{
-	MatrixXd nuclearMatrix;
-
-	PROFILE_SCOPE("NuclearElectronAttractionEnergyMatrix");
-
-	assert(atoms.size() > 1);
-	unsigned int numberOfContractedGaussians = 0;
-	for (const Atom& atom : atoms)
-		numberOfContractedGaussians += basis.GetAtom(atom.type).NumberOfContractedGaussians();
-
-	nuclearMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
-
-	struct ComputeItem
-	{
-		unsigned int index_i;
-		unsigned int index_j;
-		const ContractedGaussianOrbital& orbital_1;
-		const ContractedGaussianOrbital& orbital_2;
-		const Vec3d& position_1;
-		const Vec3d& position_2;
-	};
-	std::vector<ComputeItem> computeItems;
-	computeItems.reserve(numberOfContractedGaussians * numberOfContractedGaussians); // Note, we are over reserving here, but thats fine to waste the extra memory
-
-	{
-		PROFILE_SCOPE("Make compute items");
-
-		unsigned int i = 0;
-		for (const auto& atom1 : atoms)
-		{
-			for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
-			{
-				for (const auto& orbital1 : shell1.basisFunctions)
-				{
-					unsigned int j = 0;
-
-					for (const auto& atom2 : atoms)
-					{
-						for (const auto& shell2 : basis.GetAtom(atom2.type).shells)
-						{
-							for (const auto& orbital2 : shell2.basisFunctions)
-							{
-								if (j >= i)
-								{
-									computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
-								}
-
-								++j;
-							}
-						}
-					}
-					++i;
-				}
-			}
-		}
-	}
-	std::for_each(computeItems.begin(), computeItems.end(),
-		[&nuclearMatrix, &atoms](const ComputeItem& item)
-		{
-			PROFILE_SCOPE("Compute Item");
-
-			for (const auto& nuclearCenterAtom : atoms)
-			{
-				PROFILE_SCOPE("Iterating on atom");
-				nuclearMatrix(item.index_i, item.index_j) -= nuclearCenterAtom.Z() * NuclearElectronAttractionEnergyOfTwoOrbitals_2(nuclearCenterAtom.position, item.orbital_1, item.position_1, item.orbital_2, item.position_2);
-			}
-			if (item.index_i != item.index_j)
-				nuclearMatrix(item.index_j, item.index_i) = nuclearMatrix(item.index_i, item.index_j);
-		});
-
-	return nuclearMatrix;
-}
-MatrixXd NuclearElectronAttractionEnergyMatrix_Par(std::span<Atom> atoms, const Basis& basis) noexcept
-{
-	MatrixXd nuclearMatrix;
-
-	assert(atoms.size() > 1);
-	unsigned int numberOfContractedGaussians = 0;
-	for (const Atom& atom : atoms)
-		numberOfContractedGaussians += basis.GetAtom(atom.type).NumberOfContractedGaussians();
-
-	nuclearMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
-
-	struct ComputeItem
-	{
-		unsigned int index_i;
-		unsigned int index_j;
-		const ContractedGaussianOrbital& orbital_1;
-		const ContractedGaussianOrbital& orbital_2;
-		const Vec3d& position_1;
-		const Vec3d& position_2;
-	};
-	std::vector<ComputeItem> computeItems;
-	computeItems.reserve(numberOfContractedGaussians * numberOfContractedGaussians); // Note, we are over reserving here, but thats fine to waste the extra memory
-
-	unsigned int i = 0;
-	for (const auto& atom1 : atoms)
-	{
-		for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
-		{
-			for (const auto& orbital1 : shell1.basisFunctions)
-			{
-				unsigned int j = 0;
-
-				for (const auto& atom2 : atoms)
-				{
-					for (const auto& shell2 : basis.GetAtom(atom2.type).shells)
-					{
-						for (const auto& orbital2 : shell2.basisFunctions)
-						{
-							if (j >= i)
-							{
-								computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
-							}
-
-							++j;
-						}
-					}
-				}
-				++i;
-			}
-		}
-	}
-
-	std::for_each(std::execution::par_unseq, computeItems.begin(), computeItems.end(),
-		[&nuclearMatrix, &atoms](const ComputeItem& item)
-		{
-			std::atomic<double> result = 0.0;
-
-			std::for_each(std::execution::par_unseq, atoms.begin(), atoms.end(),
-				[&result, &item](const Atom& nuclearCenterAtom)
-				{
-					result -= nuclearCenterAtom.Z() * NuclearElectronAttractionEnergyOfTwoOrbitals(nuclearCenterAtom.position, item.orbital_1, item.position_1, item.orbital_2, item.position_2);
-				});
-
-			nuclearMatrix(item.index_i, item.index_j) = result.load();
-
-			if (item.index_i != item.index_j)
-				nuclearMatrix(item.index_j, item.index_i) = nuclearMatrix(item.index_i, item.index_j);
-		});
-
-	return nuclearMatrix;
-}
-
-
-
-
-
-
-
 struct QuantumNumbersWithMetadata
 {
 	constexpr QuantumNumbersWithMetadata(unsigned int l, unsigned int m, unsigned int n) noexcept :
@@ -1533,7 +780,6 @@ struct QuantumNumbersWithMetadata
 
 	unsigned int totalIndexOfPrev;
 	unsigned int totalIndexOfPrevPrev;
-//	unsigned int totalIndexOfNext;
 
 	std::array<unsigned int, 3> nextQuantumNumbers;
 
@@ -1577,219 +823,6 @@ static constexpr std::array<QuantumNumbersWithMetadata, 35> allQuantumNumbersInC
 		QuantumNumbersWithMetadata{0, 1, 3},
 		QuantumNumbersWithMetadata{0, 0, 4},
 };
-
-
-static void GenerateBoysFunctions_3(double* results, int maxM, double T)
-{
-	results[maxM] = BoysFunction(maxM, T);
-
-	for (int m = maxM - 1; m >= 0; --m)
-		results[m] = (2. * T * results[m + 1ULL] + std::exp(-T)) / (2. * m + 1.);
-}
-static void VerticalRecursion_3(MatrixXd& mat, double alpha, const Vec3d& Rp, const Vec3d& center1, const Vec3d& difN, unsigned int maxL)
-{
-	if (maxL == 0)
-		return;
-
-	double difScalar, difNScalar;
-
-	const unsigned int size = maxL + 1;
-	const auto difRp = Rp - center1;
-
-	// Iterate over the quantum numbers with total angular momentum = 1. These are just the 3 p quantum numbers
-	// We separate these out because the calculation is slightly different given that they do not have a prevprev quantum number
-	for (unsigned int qnIndex = 1; qnIndex <= 3; ++qnIndex)
-	{
-		const QuantumNumbersWithMetadata& currentQNMd = allQuantumNumbersInCanonicalOrder[qnIndex];
-		const QuantumNumbers& currentQN = currentQNMd.quantumNumbers;
-		unsigned int curIndex = currentQNMd.totalCanonicalIndex;
-
-		const QuantumNumbersWithMetadata& prevQNMd = allQuantumNumbersInCanonicalOrder[currentQNMd.totalIndexOfPrev];
-		const QuantumNumbers& prevQN = prevQNMd.quantumNumbers;
-		unsigned int prevIndex = prevQNMd.totalCanonicalIndex;
-
-		unsigned int stoppingPoint = size - currentQN.AngularMomentum();
-		for (unsigned int m = 0; m < stoppingPoint; ++m)
-		{
-			difScalar = difRp[currentQNMd.offset];
-			difNScalar = difN[currentQNMd.offset];
-			mat(curIndex, m) = difScalar * mat(prevIndex, m) + difNScalar * mat(prevIndex, m + 1ULL);
-		}
-	}
-
-	// Now continue a similar calculation, but start with the d quantum numbers with total angular momentum 2 and continue
-	// until you've covered all sets of quantum numbers with total angular momentum <= maxL
-	for (unsigned int qnIndex = 4; allQuantumNumbersInCanonicalOrder[qnIndex].quantumNumbers.AngularMomentum() < size; ++qnIndex)
-	{
-		const QuantumNumbersWithMetadata& currentQNMd = allQuantumNumbersInCanonicalOrder[qnIndex];
-		const QuantumNumbers& currentQN = currentQNMd.quantumNumbers;
-		unsigned int curIndex = currentQNMd.totalCanonicalIndex;
-
-		const QuantumNumbersWithMetadata& prevQNMd = allQuantumNumbersInCanonicalOrder[currentQNMd.totalIndexOfPrev];
-		const QuantumNumbers& prevQN = prevQNMd.quantumNumbers;
-		unsigned int prevIndex = prevQNMd.totalCanonicalIndex;
-
-		const QuantumNumbersWithMetadata& prevPrevQNMd = allQuantumNumbersInCanonicalOrder[currentQNMd.totalIndexOfPrevPrev];
-		const QuantumNumbers& prevPrevQN = prevPrevQNMd.quantumNumbers;
-		unsigned int prevPrevIndex = prevPrevQNMd.totalCanonicalIndex;
-
-		unsigned int stoppingPoint = size - currentQN.AngularMomentum();
-		for (unsigned int m = 0; m < stoppingPoint; ++m)
-		{
-			difScalar = difRp[currentQNMd.offset];
-			difNScalar = difN[currentQNMd.offset];
-
-			// NOTE: currentQNMd.N will be 0 for certain quantum numbers. In order for it to not be 0, the current QuantumNumber needs to 
-			//       have a value >= 2 for at least one of its components. When this is not the case, it is not possible to compute the
-			//       prevprev QuantumNumber. So in theory, this could probably be optimized to not attempt to execute that part of the 
-			//       computation when it knows N will be 0, but for simplicity, we lleave it like this for now
-			mat(curIndex, m) = difScalar * mat(prevIndex, m) + difNScalar * mat(prevIndex, m + 1ULL) +
-				currentQNMd.N / (2. * alpha) * (mat(prevPrevIndex, m) - mat(prevPrevIndex, m + 1ULL));
-		}
-	}
-}
-static MatrixXd GetNuclearVertical_3(const Vec3d& nuclearCenter, const PrimitiveGaussian& gaussian1, const Vec3d& position1, const PrimitiveGaussian& gaussian2, const Vec3d& position2, unsigned int maxL1, unsigned int maxL2)
-{
-	MatrixXd m;
-
-	const double alpha = gaussian1.alpha + gaussian2.alpha;
-	const Vec3d Rp = (gaussian1.alpha * position1 + gaussian2.alpha * position2) / alpha;
-	const Vec3d difN = nuclearCenter - Rp;
-	const Vec3d dif = position1 - position2;
-
-	const unsigned int maxL = maxL1 + maxL2;
-	const unsigned int size = maxL + 1;
-
-	// auxiliary integrals
-	double* boys = static_cast<double*>(alloca(sizeof(double) * size));
-	GenerateBoysFunctions_3(boys, maxL, alpha * (difN * difN));
-
-	QuantumNumbers maxQN(0, 0, maxL);
-
-	const double factor = 2. * std::numbers::pi / alpha * std::exp(-gaussian1.alpha * gaussian2.alpha / alpha * dif * dif);
-	m = Eigen::MatrixXd::Zero(maxQN.GetTotalCanonicalIndex() + 1ULL, size);
-
-	for (unsigned int i = 0; i < size; ++i)
-		m(0, i) = factor * boys[i];
-
-	VerticalRecursion_3(m, alpha, Rp, position1, difN, maxL);
-
-	m = m.block(0, 0, m.rows(), 1).eval();
-	return m;
-}
-static double NuclearElectronAttractionEnergyOfTwoOrbitals_3(const Vec3d& nuclearCenter, const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
-{
-	// The algorithm assumes that the angular momentum of orbital1 is <= that of orbital2. So we need to do a swap here if that isn't the case
-	const ContractedGaussianOrbital& orbital_1 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? orbital1 : orbital2;
-	const ContractedGaussianOrbital& orbital_2 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? orbital2 : orbital1;
-
-	const Vec3d& position_1 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? position1 : position2;
-	const Vec3d& position_2 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? position2 : position1;
-
-	QuantumNumbers maxQN(0, 0, orbital_1.angularMomentum.AngularMomentum() + orbital_2.angularMomentum.AngularMomentum());
-	Eigen::MatrixXd horizNuclear = Eigen::MatrixXd::Zero(maxQN.GetTotalCanonicalIndex() + 1ULL, 1);
-
-	for (const auto& gaussian_1 : orbital_1.gaussianOrbitals)
-	{
-		for (const auto& gaussian_2 : orbital_2.gaussianOrbitals)
-		{
-			Eigen::MatrixXd nuclear = GetNuclearVertical_3(nuclearCenter, gaussian_1, position_1, gaussian_2, position_2, orbital_1.angularMomentum.AngularMomentum(), orbital_2.angularMomentum.AngularMomentum());
-
-			double factor = gaussian_1.normalizationFactor * gaussian_2.normalizationFactor * gaussian_1.coefficient * gaussian_2.coefficient;
-
-			for (int row = 0; row < horizNuclear.rows(); ++row)
-				horizNuclear(row, 0) += factor * nuclear(row, 0);
-		}
-	}
-
-	HorizontalRecursion(horizNuclear, position_1 - position_2, orbital_1.angularMomentum.AngularMomentum(), orbital_2.angularMomentum.AngularMomentum());
-
-	return horizNuclear(orbital_1.angularMomentum.GetTotalCanonicalIndex(), orbital_2.angularMomentum.GetTotalCanonicalIndex());
-}
-MatrixXd NuclearElectronAttractionEnergyMatrix_3(std::span<Atom> atoms, const Basis& basis) noexcept
-{
-	MatrixXd nuclearMatrix;
-
-	PROFILE_SCOPE("NuclearElectronAttractionEnergyMatrix");
-
-	assert(atoms.size() > 1);
-	unsigned int numberOfContractedGaussians = 0;
-	for (const Atom& atom : atoms)
-		numberOfContractedGaussians += basis.GetAtom(atom.type).NumberOfContractedGaussians();
-
-	nuclearMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
-
-	struct ComputeItem
-	{
-		unsigned int index_i;
-		unsigned int index_j;
-		const ContractedGaussianOrbital& orbital_1;
-		const ContractedGaussianOrbital& orbital_2;
-		const Vec3d& position_1;
-		const Vec3d& position_2;
-	};
-	std::vector<ComputeItem> computeItems;
-	computeItems.reserve(numberOfContractedGaussians * numberOfContractedGaussians); // Note, we are over reserving here, but thats fine to waste the extra memory
-
-	{
-		PROFILE_SCOPE("Make compute items");
-
-		unsigned int i = 0;
-		for (const auto& atom1 : atoms)
-		{
-			for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
-			{
-				for (const auto& orbital1 : shell1.basisFunctions)
-				{
-					unsigned int j = 0;
-
-					for (const auto& atom2 : atoms)
-					{
-						for (const auto& shell2 : basis.GetAtom(atom2.type).shells)
-						{
-							for (const auto& orbital2 : shell2.basisFunctions)
-							{
-								if (j >= i)
-								{
-									computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
-								}
-
-								++j;
-							}
-						}
-					}
-					++i;
-				}
-			}
-		}
-	}
-	std::for_each(computeItems.begin(), computeItems.end(),
-		[&nuclearMatrix, &atoms](const ComputeItem& item)
-		{
-			PROFILE_SCOPE("Compute Item");
-
-			for (const auto& nuclearCenterAtom : atoms)
-			{
-				PROFILE_SCOPE("Iterating on atom");
-				nuclearMatrix(item.index_i, item.index_j) -= nuclearCenterAtom.Z() * NuclearElectronAttractionEnergyOfTwoOrbitals_3(nuclearCenterAtom.position, item.orbital_1, item.position_1, item.orbital_2, item.position_2);
-			}
-			if (item.index_i != item.index_j)
-				nuclearMatrix(item.index_j, item.index_i) = nuclearMatrix(item.index_i, item.index_j);
-		});
-
-	return nuclearMatrix;
-}
-
-
-
-
-
-
-
-
-
-
-
 class NuclearMatrix
 {
 public:
@@ -1819,9 +852,50 @@ private:
 	std::array<double, m_rowCount * m_colCount> values = {}; // The braces are required so the array is 0-initialized
 };
 
-
-static void VerticalRecursion_4(NuclearMatrix& mat, double alpha, const Vec3d& Rp, const Vec3d& center1, const Vec3d& difN, unsigned int maxL)
+static double BoysFunction(double m, double x)
 {
+	PROFILE_SCOPE("BoysFunction");
+
+	if (0.0 == m && 0.0 == x)
+		return 1.0;
+
+	double res = 0;
+
+	const double t = 1E-10;
+	if (std::abs(x) < t)
+		x = t;
+
+	if (x > 160)
+	{
+		return static_cast<double>(
+			MathUtils::DoubleFactorial(static_cast<unsigned int>(2 * m - 1)) /
+			std::pow(2, m + 1) *
+			std::sqrt(std::numbers::pi / std::pow(x, 2 * m + 1))
+			);
+	}
+
+	MathUtils::IncompleteGamma(m + 1. / 2., x, res);
+
+	return res / (2. * std::pow(x, m + 1. / 2.));
+}
+static inline auto GenerateBoysFunctions(int maxM, double T)
+{
+	PROFILE_SCOPE("GenerateBoysFunctions");
+
+	// The maximum number of boys functions required is the angular momentum of both orbitals + 1. So here we support up to f orbitals
+	std::array<double, 2 * QuantumNumbers(0, 0, 4).AngularMomentum() + 1> results{};
+
+	results[maxM] = BoysFunction(maxM, T);
+
+	for (int m = maxM - 1; m >= 0; --m)
+		results[m] = (2. * T * results[m + 1ULL] + std::exp(-T)) / (2. * m + 1.);
+
+	return results;
+}
+static void VerticalRecursion(NuclearMatrix& mat, double alpha, const Vec3d& Rp, const Vec3d& center1, const Vec3d& difN, unsigned int maxL)
+{
+	PROFILE_SCOPE("VerticalRecursion");
+
 	if (maxL == 0)
 		return;
 
@@ -1882,8 +956,10 @@ static void VerticalRecursion_4(NuclearMatrix& mat, double alpha, const Vec3d& R
 		}
 	}
 }
-static void GetNuclearVertical_4(NuclearMatrix& mat, const Vec3d& nuclearCenter, const PrimitiveGaussian& gaussian1, const Vec3d& position1, const PrimitiveGaussian& gaussian2, const Vec3d& position2, unsigned int maxL1, unsigned int maxL2)
+static void GetNuclearVertical(NuclearMatrix& mat, const Vec3d& nuclearCenter, const PrimitiveGaussian& gaussian1, const Vec3d& position1, const PrimitiveGaussian& gaussian2, const Vec3d& position2, unsigned int maxL1, unsigned int maxL2)
 {
+	PROFILE_SCOPE("GetNuclearVertical");
+
 	const double alpha = gaussian1.alpha + gaussian2.alpha;
 	const Vec3d Rp = (gaussian1.alpha * position1 + gaussian2.alpha * position2) / alpha;
 	const Vec3d difN = nuclearCenter - Rp;
@@ -1893,284 +969,21 @@ static void GetNuclearVertical_4(NuclearMatrix& mat, const Vec3d& nuclearCenter,
 	const unsigned int size = maxL + 1;
 
 	// auxiliary integrals
-	double* boys = static_cast<double*>(alloca(sizeof(double) * size));
-	GenerateBoysFunctions_3(boys, maxL, alpha * (difN * difN));
+	auto boys = GenerateBoysFunctions(maxL, alpha * (difN * difN));
 
 	QuantumNumbers maxQN(0, 0, maxL);
 
 	const double factor = 2. * std::numbers::pi / alpha * std::exp(-gaussian1.alpha * gaussian2.alpha / alpha * dif * dif);
-//	m = Eigen::MatrixXd::Zero(maxQN.GetTotalCanonicalIndex() + 1ULL, size);
 
 	for (unsigned int i = 0; i < size; ++i)
 		mat(0, i) = factor * boys[i];
 
-//	std::println("Vertical Intermediate: {}", mat(0, 0));
-
-	VerticalRecursion_4(mat, alpha, Rp, position1, difN, maxL);
-
-//	std::println("Vertical Intermediate 2: {}", (*mat)(0, 0));
-
-//	m = m.block(0, 0, m.rows(), 1).eval();
-//	return m;
+	VerticalRecursion(mat, alpha, Rp, position1, difN, maxL);
 }
-static double NuclearElectronAttractionEnergyOfTwoOrbitals_4(const Vec3d& nuclearCenter, const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
+static void HorizontalRecursion(NuclearMatrix& mat, const Vec3d& dif, unsigned int maxL1, unsigned int maxL2)
 {
-	// The algorithm assumes that the angular momentum of orbital1 is <= that of orbital2. So we need to do a swap here if that isn't the case
-	const ContractedGaussianOrbital& orbital_1 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? orbital1 : orbital2;
-	const ContractedGaussianOrbital& orbital_2 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? orbital2 : orbital1;
+	PROFILE_SCOPE("HorizontalRecursion");
 
-	const Vec3d& position_1 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? position1 : position2;
-	const Vec3d& position_2 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? position2 : position1;
-
-	QuantumNumbers maxQN(0, 0, orbital_1.angularMomentum.AngularMomentum() + orbital_2.angularMomentum.AngularMomentum());
-	Eigen::MatrixXd horizNuclear = Eigen::MatrixXd::Zero(maxQN.GetTotalCanonicalIndex() + 1ULL, 1);
-
-	NuclearMatrix nuclear;
-
-	for (const auto& gaussian_1 : orbital_1.gaussianOrbitals)
-	{
-		for (const auto& gaussian_2 : orbital_2.gaussianOrbitals)
-		{
-			GetNuclearVertical_4(nuclear, nuclearCenter, gaussian_1, position_1, gaussian_2, position_2, orbital_1.angularMomentum.AngularMomentum(), orbital_2.angularMomentum.AngularMomentum());
-
-			double factor = gaussian_1.normalizationFactor * gaussian_2.normalizationFactor * gaussian_1.coefficient * gaussian_2.coefficient;
-
-			for (int row = 0; row < horizNuclear.rows(); ++row)
-				horizNuclear(row, 0) += factor * nuclear(row, 0);
-		}
-	}
-
-	HorizontalRecursion(horizNuclear, position_1 - position_2, orbital_1.angularMomentum.AngularMomentum(), orbital_2.angularMomentum.AngularMomentum());
-
-	return horizNuclear(orbital_1.angularMomentum.GetTotalCanonicalIndex(), orbital_2.angularMomentum.GetTotalCanonicalIndex());
-}
-MatrixXd NuclearElectronAttractionEnergyMatrix_4(std::span<Atom> atoms, const Basis& basis) noexcept
-{
-	MatrixXd nuclearMatrix;
-
-	PROFILE_SCOPE("NuclearElectronAttractionEnergyMatrix");
-
-	assert(atoms.size() > 1);
-	unsigned int numberOfContractedGaussians = 0;
-	for (const Atom& atom : atoms)
-		numberOfContractedGaussians += basis.GetAtom(atom.type).NumberOfContractedGaussians();
-
-	nuclearMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
-
-	struct ComputeItem
-	{
-		unsigned int index_i;
-		unsigned int index_j;
-		const ContractedGaussianOrbital& orbital_1;
-		const ContractedGaussianOrbital& orbital_2;
-		const Vec3d& position_1;
-		const Vec3d& position_2;
-	};
-	std::vector<ComputeItem> computeItems;
-	computeItems.reserve(numberOfContractedGaussians * numberOfContractedGaussians); // Note, we are over reserving here, but thats fine to waste the extra memory
-
-	{
-		PROFILE_SCOPE("Make compute items");
-
-		unsigned int i = 0;
-		for (const auto& atom1 : atoms)
-		{
-			for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
-			{
-				for (const auto& orbital1 : shell1.basisFunctions)
-				{
-					unsigned int j = 0;
-
-					for (const auto& atom2 : atoms)
-					{
-						for (const auto& shell2 : basis.GetAtom(atom2.type).shells)
-						{
-							for (const auto& orbital2 : shell2.basisFunctions)
-							{
-								if (j >= i)
-								{
-									computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
-								}
-
-								++j;
-							}
-						}
-					}
-					++i;
-				}
-			}
-		}
-	}
-	std::for_each(computeItems.begin(), computeItems.end(),
-			[&nuclearMatrix, &atoms](const ComputeItem& item)
-		{
-			PROFILE_SCOPE("Compute Item");
-
-			for (const auto& nuclearCenterAtom : atoms)
-			{
-				PROFILE_SCOPE("Iterating on atom");
-				nuclearMatrix(item.index_i, item.index_j) -= nuclearCenterAtom.Z() * NuclearElectronAttractionEnergyOfTwoOrbitals_4(nuclearCenterAtom.position, item.orbital_1, item.position_1, item.orbital_2, item.position_2);
-			}
-			if (item.index_i != item.index_j)
-				nuclearMatrix(item.index_j, item.index_i) = nuclearMatrix(item.index_i, item.index_j);
-		});
-
-	return nuclearMatrix;
-}
-
-
-
-
-static void HorizontalRecursion_5(NuclearMatrix& mat, const Vec3d& dif, unsigned int maxL1, unsigned int maxL2)
-{
-	//	std::println("===========================================================================");
-	//	std::println("Horizontal Recursion");
-	//	std::println("===========================================================================");
-
-	unsigned int maxL = maxL1 + maxL2;
-
-	for (auto currentQNj = QuantumNumbers(1, 0, 0); currentQNj <= maxL2; IncrementQNandDecrementLimitIfNeeded(currentQNj, maxL))  //this for walks over the columns of the matrix
-	{
-		for (auto currentQN = QuantumNumbers(0, 0, 0); currentQN < maxL; ++currentQN) // this for walks over the rows of the matrix
-		{
-			auto nextQN = currentQN;
-			auto prevQNj = currentQNj;
-
-			double difScalar = GetNextAndPrevQNAndScalarDiffForHorizontalRecursion(currentQN, currentQNj, dif, nextQN, prevQNj);
-
-			unsigned int curIndex = currentQN.GetTotalCanonicalIndex();
-			unsigned int curIndexJ = currentQNj.GetTotalCanonicalIndex();
-
-			unsigned int nextIndex = nextQN.GetTotalCanonicalIndex();
-			unsigned int prevIndexJ = prevQNj.GetTotalCanonicalIndex();
-
-			mat(curIndex, curIndexJ) = mat(nextIndex, prevIndexJ) + difScalar * mat(curIndex, prevIndexJ);
-
-			//			std::println("-------------- Iteration --------------");
-			//			std::println("maxL = {0}", maxL);
-			//			std::println("currentQNj = ({0}, {1}, {2})  -->  curIndexj  = {3}", currentQNj.l, currentQNj.m, currentQNj.n, curIndexJ);
-			//			std::println("currentQN  = ({0}, {1}, {2})  -->  curIndex   = {3}", currentQN.l, currentQN.m, currentQN.n, curIndex);
-			//			std::println("nextQN     = ({0}, {1}, {2})  -->  nextIndex  = {3}", nextQN.l, nextQN.m, nextQN.n, nextIndex);
-			//			std::println("prevQNj    = ({0}, {1}, {2})  -->  prevIndexJ = {3}", prevQNj.l, prevQNj.m, prevQNj.n, prevIndexJ);
-			//			std::println("matrixHoriz({0}, {1}) = matrixHoriz({2}, {3}) + difScalar * matrixHoriz({0}, {3})", 
-			//				curIndex, curIndexJ, nextIndex, prevIndexJ);
-			//
-			//			std::cout << "Matrix:\n\n" << matrixHoriz << "\n\n";
-		}
-	}
-}
-static double NuclearElectronAttractionEnergyOfTwoOrbitals_5(const Vec3d& nuclearCenter, const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
-{
-	// The algorithm assumes that the angular momentum of orbital1 is <= that of orbital2. So we need to do a swap here if that isn't the case
-	const ContractedGaussianOrbital& orbital_1 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? orbital1 : orbital2;
-	const ContractedGaussianOrbital& orbital_2 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? orbital2 : orbital1;
-
-	const Vec3d& position_1 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? position1 : position2;
-	const Vec3d& position_2 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? position2 : position1;
-
-	QuantumNumbers maxQN(0, 0, orbital_1.angularMomentum.AngularMomentum() + orbital_2.angularMomentum.AngularMomentum());
-	unsigned int horizNuclearRowCount = maxQN.GetTotalCanonicalIndex() + 1ULL;
-
-	NuclearMatrix horizNuclear;
-	NuclearMatrix nuclear;
-
-	for (const auto& gaussian_1 : orbital_1.gaussianOrbitals)
-	{
-		for (const auto& gaussian_2 : orbital_2.gaussianOrbitals)
-		{
-			GetNuclearVertical_4(nuclear, nuclearCenter, gaussian_1, position_1, gaussian_2, position_2, orbital_1.angularMomentum.AngularMomentum(), orbital_2.angularMomentum.AngularMomentum());
-
-			double factor = gaussian_1.normalizationFactor * gaussian_2.normalizationFactor * gaussian_1.coefficient * gaussian_2.coefficient;
-
-			for (unsigned int row = 0; row < horizNuclearRowCount; ++row)
-				horizNuclear(row, 0) += factor * nuclear(row, 0);
-		}
-	}
-
-	HorizontalRecursion_5(horizNuclear, position_1 - position_2, orbital_1.angularMomentum.AngularMomentum(), orbital_2.angularMomentum.AngularMomentum());
-
-	return horizNuclear(orbital_1.angularMomentum.GetTotalCanonicalIndex(), orbital_2.angularMomentum.GetTotalCanonicalIndex());
-}
-MatrixXd NuclearElectronAttractionEnergyMatrix_5(std::span<Atom> atoms, const Basis& basis) noexcept
-{
-	MatrixXd nuclearMatrix;
-
-	PROFILE_SCOPE("NuclearElectronAttractionEnergyMatrix");
-
-	assert(atoms.size() > 1);
-	unsigned int numberOfContractedGaussians = 0;
-	for (const Atom& atom : atoms)
-		numberOfContractedGaussians += basis.GetAtom(atom.type).NumberOfContractedGaussians();
-
-	nuclearMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
-
-	struct ComputeItem
-	{
-		unsigned int index_i;
-		unsigned int index_j;
-		const ContractedGaussianOrbital& orbital_1;
-		const ContractedGaussianOrbital& orbital_2;
-		const Vec3d& position_1;
-		const Vec3d& position_2;
-	};
-	std::vector<ComputeItem> computeItems;
-	computeItems.reserve(numberOfContractedGaussians * numberOfContractedGaussians); // Note, we are over reserving here, but thats fine to waste the extra memory
-
-	{
-		PROFILE_SCOPE("Make compute items");
-
-		unsigned int i = 0;
-		for (const auto& atom1 : atoms)
-		{
-			for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
-			{
-				for (const auto& orbital1 : shell1.basisFunctions)
-				{
-					unsigned int j = 0;
-
-					for (const auto& atom2 : atoms)
-					{
-						for (const auto& shell2 : basis.GetAtom(atom2.type).shells)
-						{
-							for (const auto& orbital2 : shell2.basisFunctions)
-							{
-								if (j >= i)
-								{
-									computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
-								}
-
-								++j;
-							}
-						}
-					}
-					++i;
-				}
-			}
-		}
-	}
-	std::for_each(computeItems.begin(), computeItems.end(),
-		[&nuclearMatrix, &atoms](const ComputeItem& item)
-		{
-			PROFILE_SCOPE("Compute Item");
-
-			for (const auto& nuclearCenterAtom : atoms)
-			{
-				PROFILE_SCOPE("Iterating on atom");
-				nuclearMatrix(item.index_i, item.index_j) -= nuclearCenterAtom.Z() * NuclearElectronAttractionEnergyOfTwoOrbitals_5(nuclearCenterAtom.position, item.orbital_1, item.position_1, item.orbital_2, item.position_2);
-			}
-			if (item.index_i != item.index_j)
-				nuclearMatrix(item.index_j, item.index_i) = nuclearMatrix(item.index_i, item.index_j);
-		});
-
-	return nuclearMatrix;
-}
-
-
-
-
-
-static void HorizontalRecursion_6(NuclearMatrix& mat, const Vec3d& dif, unsigned int maxL1, unsigned int maxL2)
-{
 	unsigned int maxL = maxL1 + maxL2;
 
 	for (unsigned int qnIndex_y = 1; allQuantumNumbersInCanonicalOrder[qnIndex_y].quantumNumbers.AngularMomentum() <= maxL2; ++qnIndex_y)
@@ -2188,9 +1001,10 @@ static void HorizontalRecursion_6(NuclearMatrix& mat, const Vec3d& dif, unsigned
 		maxL -= allQuantumNumbersInCanonicalOrder[qnIndex_y + 1].quantumNumbers.AngularMomentum() - allQuantumNumbersInCanonicalOrder[qnIndex_y].quantumNumbers.AngularMomentum();
 	}
 }
-
-static double NuclearElectronAttractionEnergyOfTwoOrbitals_6(const Vec3d& nuclearCenter, const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
+static double NuclearElectronAttractionEnergyOfTwoOrbitals(const Vec3d& nuclearCenter, const ContractedGaussianOrbital& orbital1, const Vec3d& position1, const ContractedGaussianOrbital& orbital2, const Vec3d& position2) noexcept
 {
+	PROFILE_SCOPE("NuclearElectronAttractionEnergyOfTwoOrbitals");
+
 	// The algorithm assumes that the angular momentum of orbital1 is <= that of orbital2. So we need to do a swap here if that isn't the case
 	const ContractedGaussianOrbital& orbital_1 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? orbital1 : orbital2;
 	const ContractedGaussianOrbital& orbital_2 = (orbital1.angularMomentum >= orbital2.angularMomentum) ? orbital2 : orbital1;
@@ -2208,7 +1022,7 @@ static double NuclearElectronAttractionEnergyOfTwoOrbitals_6(const Vec3d& nuclea
 	{
 		for (const auto& gaussian_2 : orbital_2.gaussianOrbitals)
 		{
-			GetNuclearVertical_4(nuclear, nuclearCenter, gaussian_1, position_1, gaussian_2, position_2, orbital_1.angularMomentum.AngularMomentum(), orbital_2.angularMomentum.AngularMomentum());
+			GetNuclearVertical(nuclear, nuclearCenter, gaussian_1, position_1, gaussian_2, position_2, orbital_1.angularMomentum.AngularMomentum(), orbital_2.angularMomentum.AngularMomentum());
 
 			double factor = gaussian_1.normalizationFactor * gaussian_2.normalizationFactor * gaussian_1.coefficient * gaussian_2.coefficient;
 
@@ -2217,11 +1031,10 @@ static double NuclearElectronAttractionEnergyOfTwoOrbitals_6(const Vec3d& nuclea
 		}
 	}
 
-	HorizontalRecursion_6(horizNuclear, position_1 - position_2, orbital_1.angularMomentum.AngularMomentum(), orbital_2.angularMomentum.AngularMomentum());
-
+	HorizontalRecursion(horizNuclear, position_1 - position_2, orbital_1.angularMomentum.AngularMomentum(), orbital_2.angularMomentum.AngularMomentum());
 	return horizNuclear(orbital_1.angularMomentum.GetTotalCanonicalIndex(), orbital_2.angularMomentum.GetTotalCanonicalIndex());
 }
-MatrixXd NuclearElectronAttractionEnergyMatrix_6(std::span<Atom> atoms, const Basis& basis) noexcept
+MatrixXd NuclearElectronAttractionEnergyMatrix(std::span<Atom> atoms, const Basis& basis) noexcept
 {
 	MatrixXd nuclearMatrix;
 
@@ -2286,7 +1099,7 @@ MatrixXd NuclearElectronAttractionEnergyMatrix_6(std::span<Atom> atoms, const Ba
 			for (const auto& nuclearCenterAtom : atoms)
 			{
 				PROFILE_SCOPE("Iterating on atom");
-				nuclearMatrix(item.index_i, item.index_j) -= nuclearCenterAtom.Z() * NuclearElectronAttractionEnergyOfTwoOrbitals_6(nuclearCenterAtom.position, item.orbital_1, item.position_1, item.orbital_2, item.position_2);
+				nuclearMatrix(item.index_i, item.index_j) -= nuclearCenterAtom.Z() * NuclearElectronAttractionEnergyOfTwoOrbitals(nuclearCenterAtom.position, item.orbital_1, item.position_1, item.orbital_2, item.position_2);
 			}
 			if (item.index_i != item.index_j)
 				nuclearMatrix(item.index_j, item.index_i) = nuclearMatrix(item.index_i, item.index_j);
@@ -2294,5 +1107,84 @@ MatrixXd NuclearElectronAttractionEnergyMatrix_6(std::span<Atom> atoms, const Ba
 
 	return nuclearMatrix;
 }
+MatrixXd NuclearElectronAttractionEnergyMatrix_Par(std::span<Atom> atoms, const Basis& basis) noexcept
+{
+	MatrixXd nuclearMatrix;
+
+	PROFILE_SCOPE("NuclearElectronAttractionEnergyMatrix");
+
+	assert(atoms.size() > 1);
+	unsigned int numberOfContractedGaussians = 0;
+	for (const Atom& atom : atoms)
+		numberOfContractedGaussians += basis.GetAtom(atom.type).NumberOfContractedGaussians();
+
+	nuclearMatrix = MatrixXd::Zero(numberOfContractedGaussians, numberOfContractedGaussians);
+
+	struct ComputeItem
+	{
+		unsigned int index_i;
+		unsigned int index_j;
+		const ContractedGaussianOrbital& orbital_1;
+		const ContractedGaussianOrbital& orbital_2;
+		const Vec3d& position_1;
+		const Vec3d& position_2;
+	};
+	std::vector<ComputeItem> computeItems;
+	computeItems.reserve(numberOfContractedGaussians * numberOfContractedGaussians); // Note, we are over reserving here, but thats fine to waste the extra memory
+
+	{
+		PROFILE_SCOPE("Make compute items");
+
+		unsigned int i = 0;
+		for (const auto& atom1 : atoms)
+		{
+			for (const auto& shell1 : basis.GetAtom(atom1.type).shells)
+			{
+				for (const auto& orbital1 : shell1.basisFunctions)
+				{
+					unsigned int j = 0;
+
+					for (const auto& atom2 : atoms)
+					{
+						for (const auto& shell2 : basis.GetAtom(atom2.type).shells)
+						{
+							for (const auto& orbital2 : shell2.basisFunctions)
+							{
+								if (j >= i)
+								{
+									computeItems.emplace_back(i, j, orbital1, orbital2, atom1.position, atom2.position);
+								}
+
+								++j;
+							}
+						}
+					}
+					++i;
+				}
+			}
+		}
+	}
+	std::for_each(std::execution::par_unseq, computeItems.begin(), computeItems.end(),
+		[&nuclearMatrix, &atoms](const ComputeItem& item)
+		{
+			PROFILE_SCOPE("Compute Item");
+
+			for (const auto& nuclearCenterAtom : atoms)
+			{
+				PROFILE_SCOPE("Iterating on atom");
+				nuclearMatrix(item.index_i, item.index_j) -= nuclearCenterAtom.Z() * NuclearElectronAttractionEnergyOfTwoOrbitals(nuclearCenterAtom.position, item.orbital_1, item.position_1, item.orbital_2, item.position_2);
+			}
+			if (item.index_i != item.index_j)
+				nuclearMatrix(item.index_j, item.index_i) = nuclearMatrix(item.index_i, item.index_j);
+		});
+
+	return nuclearMatrix;
+}
+
+
+
+
+
+
 
 }

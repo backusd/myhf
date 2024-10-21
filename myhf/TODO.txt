@@ -1,8 +1,5 @@
 DONE -- Understand the code AND math for how the Hartree-Fock program implements the NUC calculation
 DONE -- Implement that method for the calculation
-	- Compare speed with the slower implementation
-	- Finish making small tweaks
-		- Improve the iteration of the quantum numbers in the horizontal recursion
 	- Profile the new implementation
 		- Make improvements to slower parts
 	- Make a parallel version - what kind of performance gains do we get?
