@@ -1,22 +1,22 @@
 DONE -- Understand the code AND math for how the Hartree-Fock program implements the NUC calculation
 DONE -- Implement that method for the calculation
 	- Compare speed with the slower implementation
-	- Finish making small tweaks, like better iteration over quantum numbers and more constexpr
-		* We are creating a new MatrixXd every time we do the vertical recursion. 
-			This should be changed to use a StackMatrix and reuse the memory upon each iteration
+	- Finish making small tweaks
+		- Improve the iteration of the quantum numbers in the horizontal recursion
 	- Profile the new implementation
-	- Make improvements to slower parts
+		- Make improvements to slower parts
+	- Make a parallel version - what kind of performance gains do we get?
 	- Figure out what kind of accuracy you're getting with the Boys functions
 		- Consider a caching scheme for better/faster Boys calculation
 	- Compare accuracy between the Hartree-Fock program and PySCF
 * Understand how PySCF implements that calculation 
 	- Is the underlying implementation in C?
-* Re-read the HSERILib paper and see if you can derive the NUC calculation from there
-* Once you've derived the NUC calculation, can you improve the integrals (performance &/or accuracy) with a better interpolation scheme?
+* Once you are completely done with the NUC calculation, be sure to fully document it in the powerpoint
 
 
-
-
+TRY THIS: QuantumNumbersWithMetadata should not hold the index of prev/prevprev/next. Instead
+			it should should have the actual QuantumNumbers
+			- Run a benchmark of doing this
 
 
 

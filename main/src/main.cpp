@@ -82,9 +82,13 @@ int main()
 //	Eigen::MatrixXd nuclearMatrix4 = NuclearElectronAttractionEnergyMatrix_4(atoms, STO_3G);
 //	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix4 << '\n';
 
-	std::println("\nStarted 5...");
-	Eigen::MatrixXd nuclearMatrix5 = NuclearElectronAttractionEnergyMatrix_5(atoms, STO_3G);
-	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix5 << '\n';
+//	std::println("\nStarted 5...");
+//	Eigen::MatrixXd nuclearMatrix5 = NuclearElectronAttractionEnergyMatrix_5(atoms, STO_3G);
+//	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix5 << '\n';
+
+	std::println("\nStarted 6...");
+	Eigen::MatrixXd nuclearMatrix6 = NuclearElectronAttractionEnergyMatrix_6(atoms, STO_3G);
+	std::cout << "\nNuclear:\n" << std::setprecision(5) << nuclearMatrix6 << '\n';
 
 //
 //	Eigen::MatrixXd nuclearMatrix2 = NuclearElectronAttractionEnergyMatrix_Par(atoms, STO_3G);

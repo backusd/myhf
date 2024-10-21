@@ -18,6 +18,7 @@ namespace myhf
 [[nodiscard]] Eigen::MatrixXd NuclearElectronAttractionEnergyMatrix_3(std::span<Atom> atoms, const Basis& basis) noexcept;
 [[nodiscard]] Eigen::MatrixXd NuclearElectronAttractionEnergyMatrix_4(std::span<Atom> atoms, const Basis& basis) noexcept;
 [[nodiscard]] Eigen::MatrixXd NuclearElectronAttractionEnergyMatrix_5(std::span<Atom> atoms, const Basis& basis) noexcept;
+[[nodiscard]] Eigen::MatrixXd NuclearElectronAttractionEnergyMatrix_6(std::span<Atom> atoms, const Basis& basis) noexcept;
 
 
 [[nodiscard]] Eigen::MatrixXd OverlapMatrix_2(std::span<Atom> atoms, const Basis& basis) noexcept;
