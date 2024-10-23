@@ -1,8 +1,47 @@
+Thoughts:
+	* The library should never throw an exception (how is performance affected if we disable exceptions?)
+		- If two atoms have the exact same position, we probably need to avoid divide by zero.
+		  Instead of the delta being 0, we should probably change it to the minimum non-zero value.
+			* Unit test this
+
+
+
+
+
+Create 2 new projects:
+- libint-sandobox:
+	* cleanup the git changes and push
+- libint-benchmark:
+	* Single main file
+	* bash script for building (Release only) - need to link Google benchmark
+	* Will only run on Linux
+
+Consider turning myhf into a CMake project. What would we need to do?
+	* The main reason being we would like to be able to unit test against libint
+      as well as compare benchmarks.
+
+
+
+
+
+Libint:
+	* Figure out how to use the Libint library
+	* Benchmark all boys functions (is there a caching/pre-calculated method?)
+	* How does accuracy compare?
+		- What is the typical range of values we need to calculate?
+		- If the range is large, do we need to call more than one function depending on the input value
+	* Benchmark overlap/kinetic/nuclear integrals
+		- Are they multithreaded or just using vectorization?
+	* Would probably be a good idea to use libint as the source for unit tests
+		- This way, we can also get away from storing the unit test data in json files
+
+
+		
+
+
+
 DONE -- Understand the code AND math for how the Hartree-Fock program implements the NUC calculation
 DONE -- Implement that method for the calculation
-	- Profile the new implementation
-		- Make improvements to slower parts
-	- Make a parallel version - what kind of performance gains do we get?
 	- Figure out what kind of accuracy you're getting with the Boys functions
 		- Consider a caching scheme for better/faster Boys calculation
 	- Compare accuracy between the Hartree-Fock program and PySCF

@@ -851,7 +851,6 @@ private:
 
 	std::array<double, m_rowCount * m_colCount> values = {}; // The braces are required so the array is 0-initialized
 };
-
 static double BoysFunction(double m, double x)
 {
 	PROFILE_SCOPE("BoysFunction");
