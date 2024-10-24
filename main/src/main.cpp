@@ -5,11 +5,26 @@
 
 using namespace myhf;
 
-
 int main()
 {
 
+	test::test2::STO_3G::Hydrogen h;
 
+	std::println("{}, {}, {}, {}\n{}, {}, {}, {}\n{}, {}, {}, {}\n", 
+		h.orbital_1s.func1.primitiveGaussians[0].alpha,
+		h.orbital_1s.func1.primitiveGaussians[0].coefficient,
+		h.orbital_1s.func1.primitiveGaussians[0].normalizationFactor,
+		h.orbital_1s.func1.primitiveGaussians[0].coeffProdNorm, 
+		
+		h.orbital_1s.func1.primitiveGaussians[1].alpha,
+		h.orbital_1s.func1.primitiveGaussians[1].coefficient,
+		h.orbital_1s.func1.primitiveGaussians[1].normalizationFactor,
+		h.orbital_1s.func1.primitiveGaussians[1].coeffProdNorm, 
+		
+		h.orbital_1s.func1.primitiveGaussians[2].alpha,
+		h.orbital_1s.func1.primitiveGaussians[2].coefficient,
+		h.orbital_1s.func1.primitiveGaussians[2].normalizationFactor,
+		h.orbital_1s.func1.primitiveGaussians[2].coeffProdNorm);
 
 	// Water
 //	std::vector<Atom> atoms =

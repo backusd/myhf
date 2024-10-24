@@ -9,8 +9,6 @@ Thoughts:
 
 
 Create 2 new projects:
-- libint-sandobox:
-	* cleanup the git changes and push
 - libint-benchmark:
 	* Single main file
 	* bash script for building (Release only) - need to link Google benchmark
