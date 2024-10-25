@@ -1,3 +1,23 @@
+Template Re-write:
+* Add compile time parsing of the basis text -> Generate the full generic basis
+	* Start with the parsing that the Hartree-Fock program did and see if it can be made constexpr
+	* If not, using the compile time parsing that json uses (see constexpr all the things)
+* Finish adding at least up to Argon within the STO-NG basis template
+	- Modify the overlap & kinetic computations to handle atoms from a generic basis
+	- Modify the overlap & kinetic computations to handle the STO-NG template (but don't pre-compute all the intermediates)
+	- Modify the overlap & kinetic computations to to handle the STO-NG template and pre-compute all intermediates values
+	- Run benchmarks for all of these
+* Try creating a template for the 6-31G family of basis sets
+	- Can this automatically work with the overlap and kinetic computations? If not, modify them to handle these basis sets
+
+
+
+
+
+
+
+
+
 Thoughts:
 	* The library should never throw an exception (how is performance affected if we disable exceptions?)
 		- If two atoms have the exact same position, we probably need to avoid divide by zero.

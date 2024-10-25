@@ -218,15 +218,9 @@ END";
 static constexpr auto basis_str_STO_6G = " ";
 
 
-//struct GenericPrimitiveGaussian
-//{
-//	double alpha;
-//	double coefficient;
-//};
 struct GenericContractedGaussianOrbital
 {
 	std::vector<double> primitiveData;
-	QuantumNumbers angularMomentum{};
 };
 struct GenericShell
 {
@@ -241,24 +235,51 @@ struct GenericBasis
 	constexpr GenericBasis(const char* basisStr) noexcept :
 		atoms{}
 	{
-		//GenericPrimitiveGaussian pg1{ 0.3425250914E+01, 0.1543289673E+00 };
-		//GenericPrimitiveGaussian pg2{ 0.6239137298E+00, 0.5353281423E+00 };
-		//GenericPrimitiveGaussian pg3{ 0.1688554040E+00, 0.4446345422E+00 };
+		// Hydrogen
+		{
+			std::vector<double> data{ 0.3425250914E+01, 0.1543289673E+00, 0.6239137298E+00, 0.5353281423E+00, 0.1688554040E+00, 0.4446345422E+00 };
+			GenericContractedGaussianOrbital cgo{ data };
+			GenericShell shell{ {cgo} };
+			GenericAtom atom{ {shell} };
+			atoms.push_back(atom);
+		}
 
-		std::vector<double> data{ 0.3425250914E+01, 0.1543289673E+00, 0.6239137298E+00, 0.5353281423E+00, 0.1688554040E+00, 0.4446345422E+00 };
+		// Helium
+		{
+			std::vector<double> data{ 0.6362421394E+01, 0.1543289673E+00, 0.1158922999E+01, 0.5353281423E+00, 0.3136497915E+00, 0.4446345422E+00 };
+			GenericContractedGaussianOrbital cgo{ data };
+			GenericShell shell{ {cgo} };
+			GenericAtom atom{ {shell} };
+			atoms.push_back(atom);
+		}
 
-		GenericContractedGaussianOrbital cgo{ data, {0, 0, 0} };
+		// Lithium
+		{
+			std::vector<double> data_1s{ 0.1611957475E+02, 0.1543289673E+00, 0.2936200663E+01, 0.5353281423E+00, 0.7946504870E+00, 0.4446345422E+00 };
+			GenericContractedGaussianOrbital cgo_1s{ data_1s };
+			GenericShell shell_1s{ {cgo_1s} };
 
-		GenericShell shell{ {cgo} };
+			std::vector<double> data_2s{ 0.6362897469E+00, -0.9996722919E-01, 0.1478600533E+00, 0.3995128261E+00, 0.4808867840E-01, 0.7001154689E+00 };
+			GenericContractedGaussianOrbital cgo_2s{ data_2s };
+			std::vector<double> data_2p{ 0.6362897469E+00, 0.1559162750E+00, 0.1478600533E+00, 0.6076837186E+00, 0.4808867840E-01, 0.3919573931E+00 };
+			GenericContractedGaussianOrbital cgo_2px{ data_2p };
+			GenericContractedGaussianOrbital cgo_2py{ data_2p };
+			GenericContractedGaussianOrbital cgo_2pz{ data_2p };
+			GenericShell shell_2sp{ { cgo_2s, cgo_2px, cgo_2py, cgo_2pz } };
 
-		GenericAtom atom{ {shell} };
-
-		atoms.push_back(atom);
+			GenericAtom atom{ {shell_1s, shell_2sp} };
+			atoms.push_back(atom);
+		}
 	}
 
-	constexpr std::span<double> GetContractedGaussianData(size_t atomIndex, size_t shellIndex, size_t functionIndex)
+	constexpr std::vector<double> GetShellData(size_t atomIndex, size_t shellIndex)
 	{
-		return atoms[atomIndex].shells[shellIndex].functions[functionIndex].primitiveData;
+		// NOTE: This will append values from multiple shell functions together, so if the shell contains more than one function,
+		//		 you must correctly parse the values into multiple functions.
+		std::vector<double> result;
+		for (GenericContractedGaussianOrbital cgo : atoms[atomIndex].shells[shellIndex].functions)
+			result.insert(result.end(), cgo.primitiveData.begin(), cgo.primitiveData.end());
+		return result;
 	}
 
 	std::vector<GenericAtom> atoms;
@@ -282,10 +303,10 @@ public:
 	{
 		coeffProdNorm = coefficient * normalizationFactor;
 	}
-	double alpha;
-	double coefficient;
-	double normalizationFactor;
-	double coeffProdNorm; // coefficient * normalizationFactor
+	double alpha{ 0.0 };
+	double coefficient{ 0.0 };
+	double normalizationFactor{ 0.0 };
+	double coeffProdNorm{ 0.0 }; // coefficient * normalizationFactor
 
 protected:
 	constexpr double ComputeNormalizationFactor(const QuantumNumbers& angularMomentum) const noexcept
@@ -299,11 +320,10 @@ protected:
 			);
 	}
 };
-
 template<size_t N>
 struct ContractedGaussian
 {
-	constexpr ContractedGaussian(std::span<double> values, const QuantumNumbers& _angularMomentum) noexcept :
+	constexpr ContractedGaussian(std::span<const double> values, const QuantumNumbers& _angularMomentum) noexcept :
 		primitiveGaussians{},
 		angularMomentum(_angularMomentum)
 	{
@@ -319,21 +339,102 @@ struct Shell
 {
 	static_assert(false);
 };
-
-template <>
-struct Shell<1, 3>
+template<size_t N1>
+struct Shell<1, N1>
 {
-	constexpr Shell(std::span<double> values, const QuantumNumbers& angularMomentum) :
+	constexpr Shell(const std::vector<double>& values, const QuantumNumbers& angularMomentum) :
 		func1(values, angularMomentum) {}
-	ContractedGaussian<3> func1;
+	ContractedGaussian<N1> func1;
 };
-
-template <>
-struct Shell<1, 6>
+template<size_t N1, size_t N2>
+struct Shell<2, N1, N2>
 {
-	constexpr Shell(std::span<double> values, const QuantumNumbers& angularMomentum) :
-		func1(values, angularMomentum) {}
-	ContractedGaussian<6> func1;
+	constexpr Shell(const std::vector<double>& values, const std::vector<QuantumNumbers>& angularMomentum) :
+		func1(std::span(values).subspan(0     , 2 * N1), angularMomentum[0]),
+		func2(std::span(values).subspan(2 * N1, 2 * N2), angularMomentum[1])
+	{}
+	ContractedGaussian<N1> func1;
+	ContractedGaussian<N2> func2;
+};
+template<size_t N1, size_t N2, size_t N3>
+struct Shell<3, N1, N2, N3>
+{
+	constexpr Shell(const std::vector<double>& values, const std::vector<QuantumNumbers>& angularMomentum) :
+		func1(std::span(values).subspan(0            , 2 * N1), angularMomentum[0]),
+		func2(std::span(values).subspan(2 * N1       , 2 * N2), angularMomentum[1]),
+		func3(std::span(values).subspan(2 * (N1 + N2), 2 * N3), angularMomentum[2])
+	{}
+	ContractedGaussian<N1> func1;
+	ContractedGaussian<N2> func2;
+	ContractedGaussian<N3> func3;
+};
+template<size_t N1, size_t N2, size_t N3, size_t N4>
+struct Shell<4, N1, N2, N3, N4>
+{
+	constexpr Shell(const std::vector<double>& values, const std::vector<QuantumNumbers>& angularMomentum) :
+		func1(std::span(values).subspan(0                 , 2 * N1), angularMomentum[0]),
+		func2(std::span(values).subspan(2 * N1            , 2 * N2), angularMomentum[1]),
+		func3(std::span(values).subspan(2 * (N1 + N2)     , 2 * N3), angularMomentum[2]),
+		func4(std::span(values).subspan(2 * (N1 + N2 + N3), 2 * N4), angularMomentum[3])
+	{}
+	ContractedGaussian<N1> func1;
+	ContractedGaussian<N2> func2;
+	ContractedGaussian<N3> func3;
+	ContractedGaussian<N4> func4;
+};
+template<size_t N1, size_t N2, size_t N3, size_t N4, size_t N5>
+struct Shell<5, N1, N2, N3, N4, N5>
+{
+	constexpr Shell(const std::vector<double>& values, const std::vector<QuantumNumbers>& angularMomentum) :
+		func1(std::span(values).subspan(0                      , 2 * N1), angularMomentum[0]),
+		func2(std::span(values).subspan(2 * N1                 , 2 * N2), angularMomentum[1]),
+		func3(std::span(values).subspan(2 * (N1 + N2)          , 2 * N3), angularMomentum[2]),
+		func4(std::span(values).subspan(2 * (N1 + N2 + N3)     , 2 * N4), angularMomentum[3]),
+		func5(std::span(values).subspan(2 * (N1 + N2 + N3 + N4), 2 * N5), angularMomentum[4])
+	{}
+	ContractedGaussian<N1> func1;
+	ContractedGaussian<N2> func2;
+	ContractedGaussian<N3> func3;
+	ContractedGaussian<N4> func4;
+	ContractedGaussian<N5> func5;
+};
+template<size_t N1, size_t N2, size_t N3, size_t N4, size_t N5, size_t N6>
+struct Shell<6, N1, N2, N3, N4, N5, N6>
+{
+	constexpr Shell(const std::vector<double>& values, const std::vector<QuantumNumbers>& angularMomentum) :
+		func1(std::span(values).subspan(0                           , 2 * N1), angularMomentum[0]),
+		func2(std::span(values).subspan(2 * N1                      , 2 * N2), angularMomentum[1]),
+		func3(std::span(values).subspan(2 * (N1 + N2)               , 2 * N3), angularMomentum[2]),
+		func4(std::span(values).subspan(2 * (N1 + N2 + N3)          , 2 * N4), angularMomentum[3]),
+		func5(std::span(values).subspan(2 * (N1 + N2 + N3 + N4)     , 2 * N5), angularMomentum[4]),
+		func5(std::span(values).subspan(2 * (N1 + N2 + N3 + N4 + N5), 2 * N6), angularMomentum[5])
+	{}
+	ContractedGaussian<N1> func1;
+	ContractedGaussian<N2> func2;
+	ContractedGaussian<N3> func3;
+	ContractedGaussian<N4> func4;
+	ContractedGaussian<N5> func5;
+	ContractedGaussian<N6> func6;
+};
+template<size_t N1, size_t N2, size_t N3, size_t N4, size_t N5, size_t N6, size_t N7>
+struct Shell<7, N1, N2, N3, N4, N5, N6, N7>
+{
+	constexpr Shell(const std::vector<double>& values, const std::vector<QuantumNumbers>& angularMomentum) :
+		func1(std::span(values).subspan(0                                , 2 * N1), angularMomentum[0]),
+		func2(std::span(values).subspan(2 * N1                           , 2 * N2), angularMomentum[1]),
+		func3(std::span(values).subspan(2 * (N1 + N2)                    , 2 * N3), angularMomentum[2]),
+		func4(std::span(values).subspan(2 * (N1 + N2 + N3)               , 2 * N4), angularMomentum[3]),
+		func5(std::span(values).subspan(2 * (N1 + N2 + N3 + N4)          , 2 * N5), angularMomentum[4]),
+		func5(std::span(values).subspan(2 * (N1 + N2 + N3 + N4 + N5)     , 2 * N6), angularMomentum[5]),
+		func5(std::span(values).subspan(2 * (N1 + N2 + N3 + N4 + N5 + N6), 2 * N7), angularMomentum[6])
+	{}
+	ContractedGaussian<N1> func1;
+	ContractedGaussian<N2> func2;
+	ContractedGaussian<N3> func3;
+	ContractedGaussian<N4> func4;
+	ContractedGaussian<N5> func5;
+	ContractedGaussian<N6> func6;
+	ContractedGaussian<N7> func7;
 };
 
 template<size_t N>
@@ -356,10 +457,24 @@ struct STO_NG_Basis
 
 //	static constexpr GenericBasis m_basis = GenericBasis(GetBasisString());
 
+	static constexpr QuantumNumbers GetQuantumNumbers_S() noexcept { return { 0, 0, 0 }; }
+	static constexpr std::vector<QuantumNumbers> GetQuantumNumbers_SP() noexcept { return std::vector<QuantumNumbers>{ { 0, 0, 0 }, { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };}
+
 	struct Hydrogen
 	{
 		static constexpr unsigned int NumberOfContractedGaussians = 1;
-		static constexpr Shell<1, N> orbital_1s = Shell<1, N>(GenericBasis(GetBasisString()).GetContractedGaussianData(0, 0, 0), {0, 0, 0});
+		static constexpr Shell<1, N> orbital_1s = Shell<1, N>(GenericBasis(GetBasisString()).GetShellData(0, 0), GetQuantumNumbers_S());
+	};
+	struct Helium
+	{
+		static constexpr unsigned int NumberOfContractedGaussians = 1;
+		static constexpr Shell<1, N> orbital_1s = Shell<1, N>(GenericBasis(GetBasisString()).GetShellData(1, 0), GetQuantumNumbers_S());
+	};
+	struct Lithium
+	{
+		static constexpr unsigned int NumberOfContractedGaussians = 5;
+		static constexpr Shell<1, N> orbital_1s  = Shell<1, N>(GenericBasis(GetBasisString()).GetShellData(2, 0), { 0, 0, 0 });
+		static constexpr Shell<4, N, N, N, N> orbital_2sp = Shell<4, N, N, N, N>(GenericBasis(GetBasisString()).GetShellData(2, 1), GetQuantumNumbers_SP());
 	};
 };
 
